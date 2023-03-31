@@ -20,6 +20,7 @@ class Scene
         virtual void update() = 0;
         virtual void sRender() = 0;
         virtual void sDoAction(const Action& action) = 0;
+        virtual void sCollisions() = 0;
         virtual void loadAssets() = 0;
 
         bool hasEnded() const;

@@ -13,6 +13,7 @@ class ScenePlay : public Scene
         ScenePlay(GameEngine* gameEngine);
         void sRender() override;
         void sDoAction(const Action& action) override;
+        void sCollisions() override;
         void sMovement();
 
     private:

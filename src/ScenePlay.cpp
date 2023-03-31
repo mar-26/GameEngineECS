@@ -129,6 +129,11 @@ void ScenePlay::sMovement()
 
 }
 
+void ScenePlay::sCollisions()
+{
+
+}
+
 void ScenePlay::onEnd()
 {
     m_game->quit();
