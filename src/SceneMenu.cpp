@@ -30,12 +30,16 @@ void SceneMenu::init()
     m_menu_button->addComponent<CTransform>(menuButtonPosition);
     m_menu_button->addComponent<CSprite>(m_scene_assets.getTexture("play_button"));
     m_menu_button->addComponent<CBoundingBox>(sf::FloatRect(menuButtonPosition.x-(buttonWidth/2), menuButtonPosition.y-(buttonHeight/2), buttonWidth, buttonHeight));
+
+    m_menu_music = m_scene_assets.getMusic("menu_music");
+    m_menu_music->play();
 }
 
 void SceneMenu::loadAssets()
 {
     m_scene_assets.addTexture("menu_background", "assets/textures/rock.png", true, true);
     m_scene_assets.addTexture("play_button", "assets/textures/buttons/play_button.png", true, true);
+    m_scene_assets.addMusic("menu_music", "assets/sounds/menu_music.ogg");
 }
 
 void SceneMenu::update()
@@ -79,6 +83,7 @@ void SceneMenu::sDoAction(const Action &action)
 
         if (action.name() == "PLAY")
         {
+            m_menu_music->stop();
             m_game->changeScene("GAME", std::make_shared<ScenePlay>(m_game));
         }
         if (action.name() == "Debug")
@@ -91,6 +96,7 @@ void SceneMenu::sDoAction(const Action &action)
             {
                 if (mouseHit(action.pos(), button))
                 {
+                    m_menu_music->stop();
                     m_game->changeScene("GAME", std::make_shared<ScenePlay>(m_game));
                 }
             }
@@ -106,4 +112,9 @@ void SceneMenu::sCollisions()
 void SceneMenu::onEnd()
 {
     m_game->quit();
+}
+
+SceneMenu::~SceneMenu()
+{
+    delete m_menu_music;
 }

@@ -11,6 +11,7 @@ class SceneMenu : public Scene
 {
     public:
         SceneMenu(GameEngine* gameEngine);
+        ~SceneMenu();
         void sRender() override;
         void sDoAction(const Action& action) override;
         void sCollisions() override;
@@ -20,6 +21,7 @@ class SceneMenu : public Scene
         std::string m_title;
         sf::Text m_menu_title;
         sf::Sprite m_background;
+        sf::Music* m_menu_music;
         bool m_debug = false;
         
         void init();
