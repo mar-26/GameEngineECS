@@ -1,6 +1,6 @@
 #include "../include/Physics.hpp"
 
-bool mouseHit(const Vector &mousePos, std::shared_ptr<Entity> entity)
+bool mouseRectHit(const Vector &mousePos, std::shared_ptr<Entity> entity)
 {
     auto boundingBox = entity->getComponent<CBoundingBox>().m_box;
     if (mousePos.x > boundingBox.left && mousePos.y > boundingBox.top &&
@@ -8,5 +8,10 @@ bool mouseHit(const Vector &mousePos, std::shared_ptr<Entity> entity)
     {
         return true;
     }
+    return false;
+}
+
+bool circleCircleHit(const Vector& c1, const Vector)
+{
     return false;
 }

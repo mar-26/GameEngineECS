@@ -10,6 +10,8 @@ typedef std::tuple<
     CTransform,
     CSprite,
     CBoundingBox,
+    CBoundingCircle,
+    CSoundEffect,
     CInput
 > ComponentTuple;
 

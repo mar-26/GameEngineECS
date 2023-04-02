@@ -11,6 +11,7 @@ class ScenePlay : public Scene
 {
     public:
         ScenePlay(GameEngine* gameEngine);
+        ~ScenePlay();
         void sRender() override;
         void sDoAction(const Action& action) override;
         void sCollisions() override;
@@ -18,8 +19,9 @@ class ScenePlay : public Scene
 
     private:
         std::shared_ptr<Entity> m_player;
-        std::string m_title;
-        sf::Text m_menu_title;
+        std::string             m_title;
+        sf::Text                m_menu_title;
+        sf::Clock               m_delta_clock;
         
         void init();
         void update() override;

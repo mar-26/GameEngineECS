@@ -45,15 +45,16 @@ void Assets::addTexture(const std::string& name, const std::string& fileName, co
 
 void Assets::addSound(const std::string& name, const std::string& path)
 {
-    sf::SoundBuffer buffer;
+    // The sound buffer needs to stay alive.
+    // Not sure if this is the best way to do it though
+    static sf::SoundBuffer buffer;
     if (!buffer.loadFromFile(path))
     {
         std::cerr << "Could not load sound file: " << path << std::endl;
     }
     else
     {
-        m_sounds[name] = sf::Sound();
-        m_sounds[name].setBuffer(buffer);
+        m_sounds[name] = sf::Sound(buffer);
         std::cout << "Loaded Sound: " << path << std::endl;
     }
 }

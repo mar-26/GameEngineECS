@@ -8,6 +8,7 @@
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 
+#include <SFML/System/Clock.hpp>
 #include <map>
 #include <memory>
 
@@ -17,6 +18,7 @@ class GameEngine
 {
     public:
         GameEngine(int w, int h, const std::string& windowTitle);
+        ~GameEngine();
 
         void changeScene(const std::string& sceneName, std::shared_ptr<Scene> scene, bool endCurrentScene = false);
 

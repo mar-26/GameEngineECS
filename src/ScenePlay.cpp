@@ -1,6 +1,10 @@
 #include "../include/ScenePlay.hpp"
 #include "../include/GameEngine.hpp"
 
+#include "../include/imgui/imgui.h"
+#include "../include/imgui-sfml/imgui-SFML.h"
+
+
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
@@ -13,10 +17,7 @@ ScenePlay::ScenePlay(GameEngine* gameEngine)
 void ScenePlay::init()
 {
     registerAction(sf::Keyboard::Escape, "QUIT");
-    registerAction(sf::Keyboard::W, "MOVE_UP");
-    registerAction(sf::Keyboard::S, "MOVE_DOWN");
-    registerAction(sf::Keyboard::A, "MOVE_LEFT");
-    registerAction(sf::Keyboard::D, "MOVE_RIGHT");
+    registerAction(sf::Keyboard::Space, "BOOST");
 
     loadAssets();
 
@@ -28,6 +29,7 @@ void ScenePlay::init()
     m_player->addComponent<CInput>();
     m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
     m_player->addComponent<CSprite>(m_scene_assets.getTexture("ship_a"));
+    m_player->addComponent<CSoundEffect>(m_scene_assets.getSound("bullet_noise"));
 }
 
 void ScenePlay::loadAssets()
@@ -35,6 +37,7 @@ void ScenePlay::loadAssets()
     m_scene_assets.addTexture("space_background", "assets/textures/space_background.png", true, true);
     m_scene_assets.addTexture("ship_a", "assets/textures/modular_ships.png", sf::IntRect(80, 320, 32, 32), true, true);
     m_scene_assets.addTexture("red_bullet", "assets/textures/beams.png", sf::IntRect(39, 143, 14, 18), true, true);
+    m_scene_assets.addSound("bullet_noise", "assets/sounds/sfx_wpn_laser.ogg");
 }
 
 void ScenePlay::update()
@@ -43,7 +46,12 @@ void ScenePlay::update()
     if (!m_paused)
     {
         sMovement();
+        sCollisions();
     }
+    ImGui::SFML::Update(m_game->window(), m_delta_clock.restart());
+    ImGui::Begin("Hello, world!");
+    ImGui::Button("Look at this pretty button");
+    ImGui::End();
 }
 
 void ScenePlay::sRender()
@@ -68,6 +76,7 @@ void ScenePlay::sRender()
             m_game->window().draw(sprite);
         }
     }
+    ImGui::SFML::Render(m_game->window());
 }
 
 void ScenePlay::sDoAction(const Action &action)
@@ -80,10 +89,7 @@ void ScenePlay::sDoAction(const Action &action)
         float angle = 0;
 
         if (action.name() == "QUIT") { onEnd(); }
-        if (action.name() == "MOVE_UP") { m_player->getComponent<CInput>().up = true; }
-        if (action.name() == "MOVE_DOWN") { m_player->getComponent<CInput>().down = true; }
-        if (action.name() == "MOVE_LEFT") { m_player->getComponent<CInput>().left = true; }
-        if (action.name() == "MOVE_RIGHT") { m_player->getComponent<CInput>().right = true; }
+        if (action.name() == "BOOST") { m_player->getComponent<CInput>().up = true; }
         if (action.name() == "MOUSE_MOVE")
         {
 
@@ -91,20 +97,22 @@ void ScenePlay::sDoAction(const Action &action)
             mousePos = Vector(action.pos().x, action.pos().y);
             mousePlayerDiff = mousePos-playerPosition;
 
-            angle = atan2(mousePlayerDiff.y, mousePlayerDiff.x) * (180/M_PI) + 90;
+            angle = atan2(mousePlayerDiff.y, mousePlayerDiff.x);
+
+            m_player->getComponent<CTransform>().m_angle = angle;
+
+            angle = angle * (180/M_PI) + 90;
 
             m_player->getComponent<CSprite>().m_sprite.setRotation(angle);
         }
         if (action.name() == "MOUSE_LEFT")
         {
+            m_player->getComponent<CSoundEffect>().m_sound.play();
         }
     }
     else if (action.type() == "END")
     {
-        if (action.name() == "MOVE_UP") { m_player->getComponent<CInput>().up = false; }
-        if (action.name() == "MOVE_DOWN") { m_player->getComponent<CInput>().down = false; }
-        if (action.name() == "MOVE_LEFT") { m_player->getComponent<CInput>().left = false; }
-        if (action.name() == "MOVE_RIGHT") { m_player->getComponent<CInput>().right = false; }
+        if (action.name() == "BOOST") { m_player->getComponent<CInput>().up = false; }
         if (action.name() == "MOUSE_LEFT")
         {
             m_player->getComponent<CInput>().shoot = false;
@@ -119,10 +127,7 @@ void ScenePlay::sMovement()
     Vector previousVelocity = transform.m_velocity;
     auto playerInput = m_player->getComponent<CInput>();
 
-    if (playerInput.up) { previousVelocity.y -= 1; }
-    if (playerInput.down) { previousVelocity.y += 1; }
-    if (playerInput.left) { previousVelocity.x -= 1; }
-    if (playerInput.right) { previousVelocity.x += 1; }
+    if (playerInput.up) { previousVelocity = Vector(4*cos(transform.m_angle), 3*sin(transform.m_angle)); }
 
     transform.m_velocity = previousVelocity;
     transform.m_position += transform.m_velocity;
@@ -131,10 +136,31 @@ void ScenePlay::sMovement()
 
 void ScenePlay::sCollisions()
 {
+    auto& playerTransform = m_player->getComponent<CTransform>();
 
+    if (playerTransform.m_position.x >= m_game->width())
+    {
+        playerTransform.m_position.x = 1;
+    }
+    if (playerTransform.m_position.x <= 0)
+    {
+        playerTransform.m_position.x = m_game->width()-1;
+    }
+    if (playerTransform.m_position.y >= m_game->height())
+    {
+        playerTransform.m_position.y = 1;
+    }
+    if (playerTransform.m_position.y <= 0)
+    {
+        playerTransform.m_position.y = m_game->height()-1;
+    }
 }
 
 void ScenePlay::onEnd()
 {
     m_game->quit();
+}
+
+ScenePlay::~ScenePlay()
+{
 }

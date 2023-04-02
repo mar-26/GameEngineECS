@@ -3,8 +3,9 @@
 
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Audio/Sound.hpp>
 
-#include "Vector.h"
+#include "Vector.hpp"
 
 class Component
 {
@@ -17,11 +18,12 @@ class CTransform : public Component
     public:
         Vector m_position = {};
         Vector m_velocity = {};
+        float m_angle = 0;
 
         CTransform() {}
         CTransform(const Vector& pos) : m_position(pos) {}
-        CTransform(const Vector& pos, const Vector& vel)
-            : m_position(pos), m_velocity(vel) {}
+        CTransform(const Vector& pos, const Vector& vel, float angle)
+            : m_position(pos), m_velocity(vel), m_angle(angle) {}
 };
 
 class CSprite : public Component
@@ -51,15 +53,47 @@ class CInput : public Component
         bool canShoot = true;
 };
 
+class CSoundEffect : public Component
+{
+    public:
+        sf::Sound m_sound;
+
+        CSoundEffect() {}
+        CSoundEffect(sf::Sound sound)
+            : m_sound(sound) {}
+};
+
+class CBoundingCircle : public Component
+{
+    public:
+        float m_radius;
+        Vector m_position;
+        sf::Vertex m_outline[11];
+
+        CBoundingCircle() {}
+        CBoundingCircle(float r, Vector pos)
+            : m_radius(r), m_position(pos) {
+                int i = 0; 
+                for (float a = 0; a < 6.28; a += 0.628)
+                {
+                    m_outline[i] = sf::Vector2f(m_radius*cos(a)+m_position.x, m_radius*sin(a)+m_position.y);
+                    m_outline[i].color = sf::Color::Red;
+                    i++;
+                }
+            }
+
+};
+
 class CBoundingBox : public Component
 {
     public:
         sf::FloatRect m_box;
+        Vector m_half_size;
         sf::Vertex m_outline[5];
 
         CBoundingBox() {}
-        CBoundingBox(sf::FloatRect rect)
-            : m_box(rect) {
+        CBoundingBox(sf::FloatRect rect, Vector halfSize)
+            : m_box(rect), m_half_size(halfSize) {
                 m_outline[0] = sf::Vector2f(m_box.left, m_box.top);
                 m_outline[1] = sf::Vector2f(m_box.left+m_box.width, m_box.top);
                 m_outline[2] = sf::Vector2f(m_box.left+m_box.width, m_box.top+m_box.height);

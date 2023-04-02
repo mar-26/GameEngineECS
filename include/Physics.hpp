@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include <memory>
 
-bool mouseHit(const Vector &mousePos, std::shared_ptr<Entity> entity);
+bool mouseRectHit(const Vector &mousePos, std::shared_ptr<Entity> entity);
+bool circleCircleHit(const Vector& c1, const Vector);
 
 #endif

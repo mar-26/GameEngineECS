@@ -2,6 +2,7 @@
 
 #include "../include/Action.hpp"
 #include "../include/SceneMenu.hpp"
+#include "../include/imgui-sfml/imgui-SFML.h"
 
 #include <SFML/Window/Event.hpp>
 
@@ -13,6 +14,7 @@ GameEngine::GameEngine(int w, int h, const std::string& windowTitle)
     m_height = h;
     m_window_title = windowTitle;
     m_running = true;
+
     init();
 }
 
@@ -20,6 +22,7 @@ void GameEngine::init()
 {
     m_window.create(sf::VideoMode(m_width, m_height), m_window_title);
     m_window.setFramerateLimit(60);
+    ImGui::SFML::Init(m_window);
 
     loadAssets();
 
@@ -54,6 +57,7 @@ void GameEngine::update()
     sUserInput();
     currentScene()->update();
     currentScene()->sRender();
+
     m_window.display();
 }
 
@@ -62,6 +66,7 @@ void GameEngine::sUserInput()
     sf::Event event;
     while (m_window.pollEvent(event))
     {
+        ImGui::SFML::ProcessEvent(m_window, event);
         if (event.type == sf::Event::Closed)
         {
             quit();
@@ -194,4 +199,9 @@ const int GameEngine::width() const
 const int GameEngine::height() const
 {
     return m_height;
+}
+
+GameEngine::~GameEngine()
+{
+    ImGui::SFML::Shutdown();
 }

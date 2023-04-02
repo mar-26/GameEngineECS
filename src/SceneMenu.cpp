@@ -29,7 +29,8 @@ void SceneMenu::init()
     m_menu_button = m_entity_manager.addEntity("menu_button");
     m_menu_button->addComponent<CTransform>(menuButtonPosition);
     m_menu_button->addComponent<CSprite>(m_scene_assets.getTexture("play_button"));
-    m_menu_button->addComponent<CBoundingBox>(sf::FloatRect(menuButtonPosition.x-(buttonWidth/2), menuButtonPosition.y-(buttonHeight/2), buttonWidth, buttonHeight));
+    m_menu_button->addComponent<CBoundingBox>(sf::FloatRect(menuButtonPosition.x-(buttonWidth/2), menuButtonPosition.y-(buttonHeight/2), buttonWidth, buttonHeight),
+                                                            Vector(buttonWidth/2.f, buttonHeight/2.f));
 
     m_menu_music = m_scene_assets.getMusic("menu_music");
     m_menu_music->play();
@@ -69,7 +70,6 @@ void SceneMenu::sRender()
             m_game->window().draw(outline, 5, sf::LineStrip);
         }
     }
-
 }
 
 void SceneMenu::sDoAction(const Action &action)
@@ -94,7 +94,7 @@ void SceneMenu::sDoAction(const Action &action)
         {
             for (auto button : m_entity_manager.getEntities("menu_button"))
             {
-                if (mouseHit(action.pos(), button))
+                if (mouseRectHit(action.pos(), button))
                 {
                     m_menu_music->stop();
                     m_game->changeScene("GAME", std::make_shared<ScenePlay>(m_game));
