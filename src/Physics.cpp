@@ -11,7 +11,20 @@ bool mouseRectHit(const Vector &mousePos, std::shared_ptr<Entity> entity)
     return false;
 }
 
-bool circleCircleHit(const Vector& c1, const Vector)
+bool circleCircleHit(std::shared_ptr<Entity> entity1, std::shared_ptr<Entity> entity2)
 {
+    auto position1 = entity1->getComponent<CTransform>().m_position;
+    auto position2 = entity2->getComponent<CTransform>().m_position;
+
+    auto circle1 = entity1->getComponent<CBoundingCircle>();
+    auto circle2 = entity2->getComponent<CBoundingCircle>();
+
+    Vector distVect = position1 - position2;
+    float dist = distVect.magnitude();
+
+    if (dist < circle1.m_radius + circle2.m_radius)
+    {
+        return true;
+    }
     return false;
 }
