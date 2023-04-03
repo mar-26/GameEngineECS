@@ -11,10 +11,11 @@ file(GLOB source_files
     src/imgui/*.cpp
 )
 
+find_package(SFML 2 REQUIRED COMPONENTS audio graphics window system)
+
 include_directories("include/imgui-sfml")
 include_directories("include/imgui")
 
-find_package(SFML 2 REQUIRED COMPONENTS audio graphics window system)
 
 add_executable(${PROJECT_NAME} ${source_files})
 
