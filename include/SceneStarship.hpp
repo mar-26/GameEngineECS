@@ -7,9 +7,9 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <memory>
 
-struct PlayerConfig
+struct PlayerStats
 {
-    float turnAngle = 10;
+    float turnAngle = 0.5;
     float speed = 5;
 };
 
@@ -24,7 +24,7 @@ class SceneStarship : public Scene
         void sMovement();
 
     private:
-        struct PlayerConfig     m_player_config;
+        struct PlayerStats     m_player_stats;
         std::shared_ptr<Entity> m_player;
         sf::Sprite              m_background;
         std::string             m_title;

@@ -11,6 +11,10 @@ void EntityManager::update()
 {
     for (auto e : m_entities_to_add)
     {
+        if (e->tag() == "player")
+        {
+            continue;
+        }
         m_entities.push_back(e);
         m_entity_map[e->tag()].push_back(e);
     }

@@ -1,6 +1,7 @@
 #include "../include/SceneStarship.hpp"
 #include "../include/GameEngine.hpp"
 #include "../include/Physics.hpp"
+#include "../include/DebugShapes.hpp"
 
 #include "../include/imgui/imgui.h"
 #include "../include/imgui-sfml/imgui-SFML.h"
@@ -13,6 +14,7 @@ SceneStarship::SceneStarship(GameEngine* gameEngine)
     : Scene(gameEngine)
 {
     init();
+    m_debug_value = 1;
 }
 
 void SceneStarship::init()
@@ -32,15 +34,21 @@ void SceneStarship::init()
     m_player = m_entity_manager.addEntity("player");
     m_player->addComponent<CInput>();
     m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
-    m_player->addComponent<CSprite>(m_scene_assets.getTexture("ship_a"));
+    m_player->addComponent<CSprite>(m_scene_assets.getTexture("player_ship"));
     m_player->addComponent<CBoundingCircle>(17);
     m_player->addComponent<CSoundEffect>(m_scene_assets.getSound("bullet_noise"));
+
+    auto enemy = m_entity_manager.addEntity("enemy");
+    enemy->addComponent<CTransform>(Vector(300, 70));
+    enemy->addComponent<CSprite>(m_scene_assets.getTexture("enemy_ship"));
+    enemy->addComponent<CBoundingCircle>(17);
 }
 
 void SceneStarship::loadAssets()
 {
     m_scene_assets.addTexture("space_background", "assets/textures/space_background.png", true, true);
-    m_scene_assets.addTexture("ship_a", "assets/textures/modular_ships.png", sf::IntRect(80, 320, 32, 32), true, true);
+    m_scene_assets.addTexture("player_ship", "assets/textures/modular_ships.png", sf::IntRect(80, 320, 32, 32), true, true);
+    m_scene_assets.addTexture("enemy_ship", "assets/textures/modular_ships.png", sf::IntRect(40, 328, 32, 28), true, true);
     m_scene_assets.addTexture("red_bullet", "assets/textures/beams.png", sf::IntRect(39, 143, 14, 18), true, true);
     m_scene_assets.addSound("bullet_noise", "assets/sounds/sfx_wpn_laser.ogg");
 }
@@ -59,7 +67,7 @@ void SceneStarship::update()
     ImGui::Begin("Debug");
     ImGui::Checkbox("Debug", &m_debug);
     ImGui::Text("angle = %f", m_player->getComponent<CTransform>().m_angle);
-    ImGui::SliderFloat("debug value", &m_debug_value, 0, 50);
+    ImGui::SliderFloat("debug value", &m_debug_value, 0.1, 1);
     ImGui::End();
 #endif
 
@@ -77,14 +85,20 @@ void SceneStarship::sDoAction(const Action &action)
         if (action.name() == "QUIT") { onEnd(); }
         if (action.name() == "MOVE_FORWARD") { m_player->getComponent<CInput>().up = true; }
         if (action.name() == "MOVE_BACKWARD") { m_player->getComponent<CInput>().down = true; }
-        if (action.name() == "TURN_LEFT") { m_player->getComponent<CTransform>().m_angle += -m_player_config.turnAngle; }
-        if (action.name() == "TURN_RIGHT") { m_player->getComponent<CTransform>().m_angle += m_player_config.turnAngle; }
+        if (action.name() == "TURN_LEFT") {
+            m_player->getComponent<CInput>().left = true;
+        }
+        if (action.name() == "TURN_RIGHT") {
+            m_player->getComponent<CInput>().right = true;
+        }
         if (action.name() == "SHOOT") { m_player->getComponent<CInput>().shoot = true; }
     }
     else if (action.type() == "END")
     {
         if (action.name() == "MOVE_FORWARD") { m_player->getComponent<CInput>().up = false; }
         if (action.name() == "MOVE_BACKWARD") { m_player->getComponent<CInput>().down = false; }
+        if (action.name() == "TURN_LEFT") { m_player->getComponent<CInput>().left = false; }
+        if (action.name() == "TURN_RIGHT") { m_player->getComponent<CInput>().right = false; }
         if (action.name() == "SHOOT")
         {
             m_player->getComponent<CInput>().shoot = false;
@@ -101,7 +115,7 @@ void SceneStarship::sMovement()
 
     // figure out how to forward and backward in the direction the ship is facing 
     float playerAngle = (transform.m_angle-90) * (M_PI/180);
-    if (playerInput.up) { previousVelocity = Vector(m_player_config.speed*cos(playerAngle), m_player_config.speed*sin(playerAngle)); }
+    if (playerInput.up) { previousVelocity = Vector(m_player_stats.speed*cos(playerAngle), m_player_stats.speed*sin(playerAngle)); }
 
     transform.m_velocity = previousVelocity;
     transform.m_position += transform.m_velocity;
@@ -151,6 +165,22 @@ void SceneStarship::sCollisions()
         {
         }
     }
+
+    for (auto enemy : m_entity_manager.getEntities("enemy"))
+    {
+        for (auto bullet : m_entity_manager.getEntities("bullet"))
+        {
+            if (circleCircleHit(bullet, enemy))
+            {
+                enemy->destroy();
+            }
+        }
+    }
+}
+
+float lerp(float v0, float v1, float t)
+{
+    return (1-t) * v0 + t * v1;
 }
 
 void SceneStarship::sRender()
@@ -166,6 +196,37 @@ void SceneStarship::sRender()
 
     m_game->window().draw(m_background);
 
+
+    // draw player
+    auto& playerSprite = m_player->getComponent<CSprite>().m_sprite;
+    auto playerTransform = m_player->getComponent<CTransform>();
+    for (float t = 0; t < 1; t+=0.1)
+    {
+        if (m_player->getComponent<CInput>().left)
+        {
+            playerSprite.setRotation(lerp(playerTransform.m_angle, playerTransform.m_angle-m_player_stats.turnAngle, t));
+            m_player->getComponent<CTransform>().m_angle += -m_player_stats.turnAngle;
+        }
+        else if (m_player->getComponent<CInput>().right)
+        {
+            playerSprite.setRotation(lerp(playerTransform.m_angle, playerTransform.m_angle+m_player_stats.turnAngle, t));
+            m_player->getComponent<CTransform>().m_angle += m_player_stats.turnAngle;
+        }
+
+        // debug for player orientation
+        if (m_debug)
+        {
+            sf::Vertex* outline = boundingCircle(m_player->getComponent<CBoundingCircle>().m_radius, playerTransform.m_position, sf::Color::Green);
+            m_game->window().draw(outline, 12, sf::LineStrip);
+
+            auto playerAngle = (m_player->getComponent<CTransform>().m_angle-90) * (M_PI/180);
+            sf::Vertex* normalLine = debugLine(playerTransform.m_position, Vector(playerSprite.getTextureRect().height*2*cos(playerAngle)+playerTransform.m_position.x, playerSprite.getTextureRect().height*2 * sin(playerAngle) + playerTransform.m_position.y), sf::Color::Red);
+            m_game->window().draw(normalLine, 2, sf::Lines);
+        }
+        playerSprite.setPosition(sf::Vector2f(playerTransform.m_position.x, playerTransform.m_position.y));
+        m_game->window().draw(playerSprite);
+    }
+
     for (auto e : m_entity_manager.getEntities())
     {
         auto& transform = e->getComponent<CTransform>();
@@ -176,32 +237,13 @@ void SceneStarship::sRender()
             sprite.setPosition(transform.m_position.x, transform.m_position.y);
             sprite.setRotation(transform.m_angle);
             m_game->window().draw(sprite);
-            if (m_debug)
-            {
-                auto playerTransform = m_player->getComponent<CTransform>().m_position;
-                auto playerAngle = (m_player->getComponent<CTransform>().m_angle-90) * (M_PI/180);
-                sf::Vertex normalLine[2] = {
-                    sf::Vector2f(playerTransform.x, playerTransform.y),
-                    sf::Vector2f(sprite.getTextureRect().height*2*cos(playerAngle)+playerTransform.x, sprite.getTextureRect().height*2 * sin(playerAngle) + playerTransform.y)
-                };
-                normalLine[0].color = sf::Color::Red;
-                normalLine[1].color = sf::Color::Red;
-                m_game->window().draw(normalLine, 2, sf::Lines);
-            }
+
         }
 
         if (e->hasComponent<CBoundingCircle>() && m_debug)
         {
             auto circle = e->getComponent<CBoundingCircle>();
-            sf::Vertex outline[12];
-            int i = 0; 
-            for (float a = 0; a < 6.28; a += 0.628)
-            {
-                outline[i] = sf::Vector2f(circle.m_radius*cos(a)+transform.m_position.x, circle.m_radius*sin(a)+transform.m_position.y);
-                outline[i].color = sf::Color::Red;
-                i++;
-            }
-            outline[i] = sf::Vector2f(circle.m_radius*cos(0)+transform.m_position.x, circle.m_radius*sin(0)+transform.m_position.y);
+            sf::Vertex* outline = boundingCircle(circle.m_radius, transform.m_position, sf::Color::Red);
             m_game->window().draw(outline, 12, sf::LineStrip);
         }
     }

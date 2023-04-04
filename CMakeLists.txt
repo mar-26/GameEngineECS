@@ -26,7 +26,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "include")
 target_link_libraries(${PROJECT_NAME} sfml-system sfml-window sfml-graphics sfml-audio)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBARIES})
+    target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_link_libraries(${PROJECT_NAME} GL)
 endif()
