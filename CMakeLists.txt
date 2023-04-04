@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PROJECT_NAME GameEngineECS)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEBUG")
 set(OpenGL_GL_PREFERENCE "GLVND")
 
 project(${PROJECT_NAME})

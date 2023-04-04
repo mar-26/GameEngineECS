@@ -1,6 +1,6 @@
 #include "../include/SceneMenu.hpp"
 #include "../include/GameEngine.hpp"
-#include "../include/ScenePlay.hpp"
+#include "../include/SceneStarship.hpp"
 #include "../include/Physics.hpp"
 
 #include <SFML/Graphics/PrimitiveType.hpp>
@@ -15,7 +15,6 @@ SceneMenu::SceneMenu(GameEngine* gameEngine)
 void SceneMenu::init()
 {
     registerAction(sf::Keyboard::Escape, "QUIT");
-    registerAction(sf::Keyboard::Enter, "PLAY");
     registerAction(sf::Keyboard::D, "Debug");
 
     loadAssets();
@@ -66,7 +65,20 @@ void SceneMenu::sRender()
 
         if (e->hasComponent<CBoundingBox>() && m_debug)
         {
-            auto& outline = e->getComponent<CBoundingBox>().m_outline;
+            auto box = e->getComponent<CBoundingBox>();
+            auto halfsize = box.m_half_size;
+            sf::Vertex outline[5] = {
+                sf::Vector2f(box.m_box.left, box.m_box.top),
+                sf::Vector2f(box.m_box.left+halfsize.x*2, box.m_box.top),
+                sf::Vector2f(box.m_box.left+halfsize.x*2, box.m_box.top+halfsize.y*2),
+                sf::Vector2f(box.m_box.left, box.m_box.top+halfsize.y*2),
+                sf::Vector2f(box.m_box.left, box.m_box.top)
+            };
+            outline[0].color = sf::Color::Red;
+            outline[1].color = sf::Color::Red;
+            outline[2].color = sf::Color::Red;
+            outline[3].color = sf::Color::Red;
+            outline[4].color = sf::Color::Red;
             m_game->window().draw(outline, 5, sf::LineStrip);
         }
     }
@@ -81,11 +93,6 @@ void SceneMenu::sDoAction(const Action &action)
             onEnd();
         }
 
-        if (action.name() == "PLAY")
-        {
-            m_menu_music->stop();
-            m_game->changeScene("GAME", std::make_shared<ScenePlay>(m_game));
-        }
         if (action.name() == "Debug")
         {
             m_debug = !m_debug;
@@ -97,7 +104,7 @@ void SceneMenu::sDoAction(const Action &action)
                 if (mouseRectHit(action.pos(), button))
                 {
                     m_menu_music->stop();
-                    m_game->changeScene("GAME", std::make_shared<ScenePlay>(m_game));
+                    m_game->changeScene("GAME", std::make_shared<SceneStarship>(m_game));
                 }
             }
         }

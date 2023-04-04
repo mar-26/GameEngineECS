@@ -22,7 +22,10 @@ void GameEngine::init()
 {
     m_window.create(sf::VideoMode(m_width, m_height), m_window_title);
     m_window.setFramerateLimit(60);
+
+#ifdef DEBUG
     ImGui::SFML::Init(m_window);
+#endif
 
     loadAssets();
 
@@ -66,7 +69,11 @@ void GameEngine::sUserInput()
     sf::Event event;
     while (m_window.pollEvent(event))
     {
+
+#ifdef DEBUG
         ImGui::SFML::ProcessEvent(m_window, event);
+#endif
+
         if (event.type == sf::Event::Closed)
         {
             quit();
@@ -203,5 +210,9 @@ const int GameEngine::height() const
 
 GameEngine::~GameEngine()
 {
+
+#ifdef DEBUG
     ImGui::SFML::Shutdown();
+#endif 
+
 }
