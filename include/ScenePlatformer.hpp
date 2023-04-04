@@ -1,5 +1,5 @@
-#ifndef SCENESTARSHIP_HPP
-#define SCENESTARSHIP_HPP
+#ifndef SCENEPLATFORMER_HPP
+#define SCENEPLATFORMER_HPP
 
 #include "Scene.hpp"
 
@@ -7,11 +7,11 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <memory>
 
-class SceneStarship : public Scene
+class ScenePlatformer : public Scene
 {
     public:
-        SceneStarship(GameEngine* gameEngine);
-        ~SceneStarship();
+        ScenePlatformer(GameEngine* gameEngine);
+        ~ScenePlatformer();
         void sRender() override;
         void sDoAction(const Action& action) override;
         void sCollisions() override;
@@ -19,8 +19,7 @@ class SceneStarship : public Scene
 
         struct PlayerStats
         {
-            float turnAngle = 0.5;
-            float speed = 2;
+            float speed = 5;
         };
 
     private:
@@ -37,7 +36,6 @@ class SceneStarship : public Scene
         void update() override;
         void onEnd() override;
         void loadAssets() override;
-        void spawnBullet(std::shared_ptr<Entity> entity, float angle);
         
 };
 

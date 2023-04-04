@@ -110,14 +110,15 @@ void SceneStarship::sDoAction(const Action &action)
 void SceneStarship::sMovement()
 {
     auto& transform = m_player->getComponent<CTransform>();
-    Vector previousVelocity = transform.m_velocity;
+    Vector velocity = transform.m_velocity;
     auto playerInput = m_player->getComponent<CInput>();
 
     // figure out how to forward and backward in the direction the ship is facing 
     float playerAngle = (transform.m_angle-90) * (M_PI/180);
-    if (playerInput.up) { previousVelocity = Vector(m_player_stats.speed*cos(playerAngle), m_player_stats.speed*sin(playerAngle)); }
+    if (playerInput.up) { velocity = Vector(m_player_stats.speed*cos(playerAngle), m_player_stats.speed*sin(playerAngle)); }
+    if (playerInput.down) { velocity = Vector(m_player_stats.speed*0.5*cos(playerAngle), m_player_stats.speed*0.5*sin(playerAngle)); }
 
-    transform.m_velocity = previousVelocity;
+    transform.m_velocity = velocity;
     transform.m_position += transform.m_velocity;
     
     if (m_player->getComponent<CInput>().shoot && m_player->getComponent<CInput>().canShoot)
@@ -178,11 +179,6 @@ void SceneStarship::sCollisions()
     }
 }
 
-float lerp(float v0, float v1, float t)
-{
-    return (1-t) * v0 + t * v1;
-}
-
 void SceneStarship::sRender()
 {
     if (!m_paused)
@@ -216,7 +212,7 @@ void SceneStarship::sRender()
         // debug for player orientation
         if (m_debug)
         {
-            sf::Vertex* outline = boundingCircle(m_player->getComponent<CBoundingCircle>().m_radius, playerTransform.m_position, sf::Color::Green);
+            sf::Vertex* outline = debugCircle(m_player->getComponent<CBoundingCircle>().m_radius, playerTransform.m_position, sf::Color::Green);
             m_game->window().draw(outline, 12, sf::LineStrip);
 
             auto playerAngle = (m_player->getComponent<CTransform>().m_angle-90) * (M_PI/180);
@@ -243,7 +239,7 @@ void SceneStarship::sRender()
         if (e->hasComponent<CBoundingCircle>() && m_debug)
         {
             auto circle = e->getComponent<CBoundingCircle>();
-            sf::Vertex* outline = boundingCircle(circle.m_radius, transform.m_position, sf::Color::Red);
+            sf::Vertex* outline = debugCircle(circle.m_radius, transform.m_position, sf::Color::Red);
             m_game->window().draw(outline, 12, sf::LineStrip);
         }
     }

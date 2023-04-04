@@ -28,3 +28,8 @@ bool circleCircleHit(std::shared_ptr<Entity> entity1, std::shared_ptr<Entity> en
     }
     return false;
 }
+
+float lerp(float v0, float v1, float t)
+{
+    return (1-t) * v0 + t * v1;
+}

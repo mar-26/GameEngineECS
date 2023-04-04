@@ -1,7 +1,9 @@
 #include "../include/SceneMenu.hpp"
 #include "../include/GameEngine.hpp"
 #include "../include/SceneStarship.hpp"
+#include "../include/ScenePlatformer.hpp"
 #include "../include/Physics.hpp"
+#include "../include/DebugShapes.hpp"
 
 #include <SFML/Graphics/PrimitiveType.hpp>
 #include <SFML/Window/Keyboard.hpp>
@@ -22,14 +24,13 @@ void SceneMenu::init()
     m_background.setTexture(m_scene_assets.getTexture("menu_background"));
     m_background.setTextureRect(sf::IntRect(0, 0, m_game->width(), m_game->height()));
 
-    Vector menuButtonPosition = Vector(m_game->width()/2.f, m_game->height()/2.f);
+    Vector starshipButtonPosition = Vector(m_game->width()/2.f, m_game->height()/2.f);
+    Vector platformerButtonPosition = Vector(m_game->width()/2.f, (m_game->height()/2.f)+100);
     float buttonWidth = 200;
     float buttonHeight = 50;
-    m_menu_button = m_entity_manager.addEntity("menu_button");
-    m_menu_button->addComponent<CTransform>(menuButtonPosition);
-    m_menu_button->addComponent<CSprite>(m_scene_assets.getTexture("play_button"));
-    m_menu_button->addComponent<CBoundingBox>(sf::FloatRect(menuButtonPosition.x-(buttonWidth/2), menuButtonPosition.y-(buttonHeight/2), buttonWidth, buttonHeight),
-                                                            Vector(buttonWidth/2.f, buttonHeight/2.f));
+
+    createButton("play_starship_button", starshipButtonPosition, "play_starship_button_texture", buttonWidth, buttonHeight);
+    createButton("play_platformer_button", platformerButtonPosition, "play_platformer_button_texture", buttonWidth, buttonHeight);
 
     m_menu_music = m_scene_assets.getMusic("menu_music");
     m_menu_music->play();
@@ -38,7 +39,8 @@ void SceneMenu::init()
 void SceneMenu::loadAssets()
 {
     m_scene_assets.addTexture("menu_background", "assets/textures/rock.png", true, true);
-    m_scene_assets.addTexture("play_button", "assets/textures/buttons/play_button.png", true, true);
+    m_scene_assets.addTexture("play_starship_button_texture", "assets/textures/buttons/play_starship_button.png", true, true);
+    m_scene_assets.addTexture("play_platformer_button_texture", "assets/textures/buttons/play_platformer_button.png", true, true);
     m_scene_assets.addMusic("menu_music", "assets/sounds/menu_music.ogg");
 }
 
@@ -66,19 +68,7 @@ void SceneMenu::sRender()
         if (e->hasComponent<CBoundingBox>() && m_debug)
         {
             auto box = e->getComponent<CBoundingBox>();
-            auto halfsize = box.m_half_size;
-            sf::Vertex outline[5] = {
-                sf::Vector2f(box.m_box.left, box.m_box.top),
-                sf::Vector2f(box.m_box.left+halfsize.x*2, box.m_box.top),
-                sf::Vector2f(box.m_box.left+halfsize.x*2, box.m_box.top+halfsize.y*2),
-                sf::Vector2f(box.m_box.left, box.m_box.top+halfsize.y*2),
-                sf::Vector2f(box.m_box.left, box.m_box.top)
-            };
-            outline[0].color = sf::Color::Red;
-            outline[1].color = sf::Color::Red;
-            outline[2].color = sf::Color::Red;
-            outline[3].color = sf::Color::Red;
-            outline[4].color = sf::Color::Red;
+            sf::Vertex* outline = debugRectangle(transform.m_position, box.m_half_size, sf::Color::Red);
             m_game->window().draw(outline, 5, sf::LineStrip);
         }
     }
@@ -99,12 +89,17 @@ void SceneMenu::sDoAction(const Action &action)
         }
         if (action.name() == "MOUSE_LEFT")
         {
-            for (auto button : m_entity_manager.getEntities("menu_button"))
+            for (auto button : m_entity_manager.getEntities())
             {
-                if (mouseRectHit(action.pos(), button))
+                if (button->tag() == "play_starship_button" && mouseRectHit(action.pos(), button))
                 {
                     m_menu_music->stop();
                     m_game->changeScene("GAME", std::make_shared<SceneStarship>(m_game));
+                }
+                if (button->tag() == "play_platformer_button" && mouseRectHit(action.pos(), button))
+                {
+                    m_menu_music->stop();
+                    m_game->changeScene("GAME", std::make_shared<ScenePlatformer>(m_game));
                 }
             }
         }
@@ -119,6 +114,15 @@ void SceneMenu::sCollisions()
 void SceneMenu::onEnd()
 {
     m_game->quit();
+}
+
+void SceneMenu::createButton(const std::string& name, const Vector& position, const std::string& textureName, float width, float height)
+{
+    auto button = m_entity_manager.addEntity(name);
+    button->addComponent<CTransform>(position);
+    button->addComponent<CSprite>(m_scene_assets.getTexture(textureName));
+    button->addComponent<CBoundingBox>(sf::FloatRect(position.x-(width/2), position.y-(height/2), width, height),
+                                                            Vector(width/2.f, height/2.f));
 }
 
 SceneMenu::~SceneMenu()

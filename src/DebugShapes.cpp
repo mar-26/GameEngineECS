@@ -1,7 +1,7 @@
 #include "../include/DebugShapes.hpp"
 
 
-sf::Vertex* boundingCircle(float radius, const Vector& position, sf::Color color)
+sf::Vertex* debugCircle(float radius, const Vector& position, sf::Color color)
 {
     sf::Vertex* outline = new sf::Vertex[12];
     int i = 0; 
@@ -24,4 +24,22 @@ sf::Vertex* debugLine(const Vector& p0, const Vector& p1, sf::Color color)
     normalLine[0].color = color;
     normalLine[1].color = color;
     return normalLine;
+}
+
+sf::Vertex* debugRectangle(const Vector& p0, const Vector& halfsize, sf::Color color)
+{
+    sf::Vertex* outline = new sf::Vertex[5];
+    outline[0] = sf::Vector2f(p0.x, p0.y),
+    outline[1] = sf::Vector2f(p0.x+halfsize.x*2, p0.y),
+    outline[2] = sf::Vector2f(p0.x+halfsize.x*2, p0.y+halfsize.y*2),
+    outline[3] = sf::Vector2f(p0.x, p0.y+halfsize.y*2),
+    outline[4] = sf::Vector2f(p0.x, p0.y);
+
+    outline[0].color = color;
+    outline[1].color = color;
+    outline[2].color = color;
+    outline[3].color = color;
+    outline[4].color = color;
+
+    return outline;
 }
