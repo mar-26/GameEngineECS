@@ -81,8 +81,8 @@ class CBoundingBox : public Component
         Vector m_half_size;
 
         CBoundingBox() {}
-        CBoundingBox(sf::FloatRect rect, Vector halfSize)
-            : m_box(rect), m_half_size(halfSize) {}
+        CBoundingBox(sf::FloatRect rect)
+            : m_box(rect), m_half_size(rect.width/2.f, rect.height/2.f) {}
 };
 
 #endif

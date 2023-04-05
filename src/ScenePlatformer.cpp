@@ -6,6 +6,7 @@
 #include "../include/imgui/imgui.h"
 #include "../include/imgui-sfml/imgui-SFML.h"
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
@@ -20,6 +21,8 @@ ScenePlatformer::ScenePlatformer(GameEngine* gameEngine)
 void ScenePlatformer::init()
 {
     registerAction(sf::Keyboard::Escape, "QUIT");
+    registerAction(sf::Keyboard::A, "MOVE_LEFT");
+    registerAction(sf::Keyboard::D, "MOVE_RIGHT");
 
     loadAssets();
 
@@ -65,6 +68,7 @@ void ScenePlatformer::sDoAction(const Action &action)
 
 void ScenePlatformer::sMovement()
 {
+
 }
 
 void ScenePlatformer::sCollisions()
@@ -83,6 +87,30 @@ void ScenePlatformer::sRender()
     }
 
     m_game->window().draw(m_background);
+
+    if (m_debug)
+    {
+
+        for (int i = 0; i < m_game->height(); i+=32)
+        {
+            sf::Vertex* horizontalLine = debugLine(Vector(0, i), Vector(m_game->width(), i), sf::Color::White);
+            m_game->window().draw(horizontalLine, 2, sf::Lines);
+        }
+        for (int i = 0; i < m_game->width(); i+=32)
+        {
+            sf::Vertex* verticalLine = debugLine(Vector(i, 0), Vector(i, m_game->height()), sf::Color::White);
+            m_game->window().draw(verticalLine, 2, sf::Lines);
+        }
+    }
+
+    for (auto e : m_entity_manager.getEntities())
+    {
+        auto transform = e->getComponent<CTransform>();
+        auto& sprite = e->getComponent<CSprite>().m_sprite;
+        sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+        m_game->window().draw(sprite);
+
+    }
 
 #ifdef DEBUG
     ImGui::SFML::Render(m_game->window());

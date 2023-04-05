@@ -121,8 +121,7 @@ void SceneMenu::createButton(const std::string& name, const Vector& position, co
     auto button = m_entity_manager.addEntity(name);
     button->addComponent<CTransform>(position);
     button->addComponent<CSprite>(m_scene_assets.getTexture(textureName));
-    button->addComponent<CBoundingBox>(sf::FloatRect(position.x-(width/2), position.y-(height/2), width, height),
-                                                            Vector(width/2.f, height/2.f));
+    button->addComponent<CBoundingBox>(sf::FloatRect(position.x-(width/2), position.y-(height/2), width, height));
 }
 
 SceneMenu::~SceneMenu()
