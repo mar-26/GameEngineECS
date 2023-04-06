@@ -97,4 +97,22 @@ class CAnimation : public Component
             : m_animation(animation), m_repeat(r) {}
 };
 
+class CGravity : public Component
+{
+    public:
+        Vector m_gravity;
+        CGravity() {}
+        CGravity(const Vector& gravity)
+            : m_gravity(gravity) {}
+};
+
+class CState : public Component
+{
+    public:
+        std::string m_state = "ground";
+        CState() {}
+        CState(const std::string& s)
+            : m_state(s) {}
+};
+
 #endif

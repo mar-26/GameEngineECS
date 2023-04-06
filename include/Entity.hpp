@@ -13,7 +13,9 @@ typedef std::tuple<
     CBoundingBox,
     CBoundingCircle,
     CSoundEffect,
-    CInput
+    CInput,
+    CState,
+    CGravity
 > ComponentTuple;
 
 class EntityManager;

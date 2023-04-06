@@ -43,6 +43,12 @@ void Assets::addTexture(const std::string& name, const std::string& fileName, co
     }
 }
 
+void Assets::addAnimation(const std::string& name, const sf::Texture& t, size_t frameCount, size_t speed, int xoffset, const sf::Vector2f& size)
+{
+    m_animation[name] = Animation(name, t, frameCount, speed, xoffset, size);
+    std::cout << "Loaded Animation: " << name << std::endl;
+}
+
 void Assets::addSound(const std::string& name, const std::string& path)
 {
     // The sound buffer needs to stay alive.
@@ -110,17 +116,8 @@ const sf::Font& Assets::getFont(const std::string& name) const
     return m_fonts.at(name);
 }
 
-void Assets::clearTextures()
+const Animation Assets::getAnimation(const std::string& name) const
 {
-    m_textures.clear();
-}
-
-void Assets::clearSounds()
-{
-    m_sounds.clear();
-}
-
-void Assets::clearFonts()
-{
-    m_fonts.clear();
+    assert(m_animation.find(name) != m_animation.end());
+    return m_animation.at(name);
 }
