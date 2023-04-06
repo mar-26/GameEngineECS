@@ -68,7 +68,7 @@ void SceneMenu::sRender()
         if (e->hasComponent<CBoundingBox>() && m_debug)
         {
             auto box = e->getComponent<CBoundingBox>();
-            sf::Vertex* outline = debugRectangle(transform.m_position, box.m_half_size, sf::Color::Red);
+            sf::Vertex* outline = debugRectangle(Vector(box.m_box.left, box.m_box.top), box.m_half_size, sf::Color::Red);
             m_game->window().draw(outline, 5, sf::LineStrip);
         }
     }
