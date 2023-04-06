@@ -1,4 +1,5 @@
 #include "../include/SceneStarship.hpp"
+#include "../include/SceneMenu.hpp"
 #include "../include/GameEngine.hpp"
 #include "../include/Physics.hpp"
 #include "../include/DebugShapes.hpp"
@@ -21,6 +22,7 @@ void SceneStarship::init()
 {
     registerAction(sf::Keyboard::Escape, "QUIT");
     registerAction(sf::Keyboard::Space, "SHOOT");
+    registerAction(sf::Keyboard::P, "PAUSE");
     registerAction(sf::Keyboard::W, "MOVE_FORWARD");
     registerAction(sf::Keyboard::S, "MOVE_BACKWARD");
     registerAction(sf::Keyboard::A, "TURN_LEFT");
@@ -83,6 +85,7 @@ void SceneStarship::sDoAction(const Action &action)
         float angle = 0;
 
         if (action.name() == "QUIT") { onEnd(); }
+        if (action.name() == "PAUSE") { setPaused(!m_paused); }
         if (action.name() == "MOVE_FORWARD") { m_player->getComponent<CInput>().up = true; }
         if (action.name() == "MOVE_BACKWARD") { m_player->getComponent<CInput>().down = true; }
         if (action.name() == "TURN_LEFT") {
@@ -126,6 +129,24 @@ void SceneStarship::sMovement()
         m_player->getComponent<CSoundEffect>().m_sound.play();
         m_player->getComponent<CInput>().canShoot = false;
         spawnBullet(m_player, playerAngle);
+    }
+
+    auto& playerSprite = m_player->getComponent<CSprite>().m_sprite;
+    for (float t = 0; t < 1; t+=0.1)
+    {
+        if (m_player->getComponent<CInput>().left)
+        {
+            playerSprite.setRotation(lerp(transform.m_angle, transform.m_angle-m_player_stats.turnAngle, t));
+            m_player->getComponent<CTransform>().m_angle += -m_player_stats.turnAngle;
+        }
+        else if (m_player->getComponent<CInput>().right)
+        {
+            playerSprite.setRotation(lerp(transform.m_angle, transform.m_angle+m_player_stats.turnAngle, t));
+            m_player->getComponent<CTransform>().m_angle += m_player_stats.turnAngle;
+        }
+
+        playerSprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+        m_game->window().draw(playerSprite);
     }
 
     auto bullets = m_entity_manager.getEntities("bullet");
@@ -184,30 +205,14 @@ void SceneStarship::sRender()
     if (!m_paused)
     {
         m_game->window().clear();
-    }
-    else
-    {
-        m_game->window().clear(sf::Color(50, 50, 150));
-    }
 
-    m_game->window().draw(m_background);
+        m_game->window().draw(m_background);
 
+        // draw player
+        auto& playerSprite = m_player->getComponent<CSprite>().m_sprite;
+        auto playerTransform = m_player->getComponent<CTransform>();
 
-    // draw player
-    auto& playerSprite = m_player->getComponent<CSprite>().m_sprite;
-    auto playerTransform = m_player->getComponent<CTransform>();
-    for (float t = 0; t < 1; t+=0.1)
-    {
-        if (m_player->getComponent<CInput>().left)
-        {
-            playerSprite.setRotation(lerp(playerTransform.m_angle, playerTransform.m_angle-m_player_stats.turnAngle, t));
-            m_player->getComponent<CTransform>().m_angle += -m_player_stats.turnAngle;
-        }
-        else if (m_player->getComponent<CInput>().right)
-        {
-            playerSprite.setRotation(lerp(playerTransform.m_angle, playerTransform.m_angle+m_player_stats.turnAngle, t));
-            m_player->getComponent<CTransform>().m_angle += m_player_stats.turnAngle;
-        }
+        m_game->window().draw(playerSprite);
 
         // debug for player orientation
         if (m_debug)
@@ -219,29 +224,30 @@ void SceneStarship::sRender()
             sf::Vertex* normalLine = debugLine(playerTransform.m_position, Vector(playerSprite.getTextureRect().height*2*cos(playerAngle)+playerTransform.m_position.x, playerSprite.getTextureRect().height*2 * sin(playerAngle) + playerTransform.m_position.y), sf::Color::Red);
             m_game->window().draw(normalLine, 2, sf::Lines);
         }
-        playerSprite.setPosition(sf::Vector2f(playerTransform.m_position.x, playerTransform.m_position.y));
-        m_game->window().draw(playerSprite);
+
+        for (auto e : m_entity_manager.getEntities())
+        {
+            auto& transform = e->getComponent<CTransform>();
+
+            if (e->hasComponent<CSprite>())
+            {
+                auto& sprite = e->getComponent<CSprite>().m_sprite;
+                sprite.setPosition(transform.m_position.x, transform.m_position.y);
+                sprite.setRotation(transform.m_angle);
+                m_game->window().draw(sprite);
+
+            }
+
+            if (e->hasComponent<CBoundingCircle>() && m_debug)
+            {
+                auto circle = e->getComponent<CBoundingCircle>();
+                sf::Vertex* outline = debugCircle(circle.m_radius, transform.m_position, sf::Color::Red);
+                m_game->window().draw(outline, 12, sf::LineStrip);
+            }
+        }
     }
-
-    for (auto e : m_entity_manager.getEntities())
+    else
     {
-        auto& transform = e->getComponent<CTransform>();
-
-        if (e->hasComponent<CSprite>())
-        {
-            auto& sprite = e->getComponent<CSprite>().m_sprite;
-            sprite.setPosition(transform.m_position.x, transform.m_position.y);
-            sprite.setRotation(transform.m_angle);
-            m_game->window().draw(sprite);
-
-        }
-
-        if (e->hasComponent<CBoundingCircle>() && m_debug)
-        {
-            auto circle = e->getComponent<CBoundingCircle>();
-            sf::Vertex* outline = debugCircle(circle.m_radius, transform.m_position, sf::Color::Red);
-            m_game->window().draw(outline, 12, sf::LineStrip);
-        }
     }
 
 #ifdef DEBUG
@@ -261,7 +267,7 @@ void SceneStarship::spawnBullet(std::shared_ptr<Entity> entity, float angle)
 
 void SceneStarship::onEnd()
 {
-    m_game->quit();
+    m_game->changeScene("GAME", std::make_shared<SceneMenu>(m_game));
 }
 
 SceneStarship::~SceneStarship()

@@ -1,4 +1,5 @@
 #include "../include/ScenePlatformer.hpp"
+#include "../include/SceneMenu.hpp"
 #include "../include/GameEngine.hpp"
 #include "../include/Physics.hpp"
 #include "../include/DebugShapes.hpp"
@@ -59,7 +60,7 @@ void ScenePlatformer::sDoAction(const Action &action)
 {
     if (action.type() == "START")
     {
-        if (action.name() == "QUIT") { m_game->quit(); }
+        if (action.name() == "QUIT") { onEnd(); }
     }
     else if (action.type() == "END")
     {
@@ -80,36 +81,36 @@ void ScenePlatformer::sRender()
     if (!m_paused)
     {
         m_game->window().clear();
+
+        m_game->window().draw(m_background);
+
+        if (m_debug)
+        {
+
+            for (int i = 0; i < m_game->height(); i+=32)
+            {
+                sf::Vertex* horizontalLine = debugLine(Vector(0, i), Vector(m_game->width(), i), sf::Color::White);
+                m_game->window().draw(horizontalLine, 2, sf::Lines);
+            }
+            for (int i = 0; i < m_game->width(); i+=32)
+            {
+                sf::Vertex* verticalLine = debugLine(Vector(i, 0), Vector(i, m_game->height()), sf::Color::White);
+                m_game->window().draw(verticalLine, 2, sf::Lines);
+            }
+        }
+
+        for (auto e : m_entity_manager.getEntities())
+        {
+            auto transform = e->getComponent<CTransform>();
+            auto& sprite = e->getComponent<CSprite>().m_sprite;
+            sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+            m_game->window().draw(sprite);
+
+        }
     }
     else
     {
-        m_game->window().clear(sf::Color(50, 50, 150));
-    }
-
-    m_game->window().draw(m_background);
-
-    if (m_debug)
-    {
-
-        for (int i = 0; i < m_game->height(); i+=32)
-        {
-            sf::Vertex* horizontalLine = debugLine(Vector(0, i), Vector(m_game->width(), i), sf::Color::White);
-            m_game->window().draw(horizontalLine, 2, sf::Lines);
-        }
-        for (int i = 0; i < m_game->width(); i+=32)
-        {
-            sf::Vertex* verticalLine = debugLine(Vector(i, 0), Vector(i, m_game->height()), sf::Color::White);
-            m_game->window().draw(verticalLine, 2, sf::Lines);
-        }
-    }
-
-    for (auto e : m_entity_manager.getEntities())
-    {
-        auto transform = e->getComponent<CTransform>();
-        auto& sprite = e->getComponent<CSprite>().m_sprite;
-        sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
-        m_game->window().draw(sprite);
-
+        m_game->window().clear();
     }
 
 #ifdef DEBUG
@@ -120,7 +121,7 @@ void ScenePlatformer::sRender()
 
 void ScenePlatformer::onEnd()
 {
-    m_game->quit();
+    m_game->changeScene("GAME", std::make_shared<SceneMenu>(m_game));
 }
 
 ScenePlatformer::~ScenePlatformer()
