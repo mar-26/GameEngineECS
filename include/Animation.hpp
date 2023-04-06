@@ -10,8 +10,8 @@ class Animation
 {
     public:
         Animation();
-        Animation(const std::string& name, const sf::Texture& t);
-        Animation(const std::string& name, const sf::Texture& t, size_t frameCount, size_t speed);
+        Animation(const std::string& name, const sf::Texture& t, const sf::Vector2f& size);
+        Animation(const std::string& name, const sf::Texture& t, size_t frameCount, size_t speed, int xoffset, const sf::Vector2f& size);
 
         void update();
         bool hasEnded() const;
@@ -20,12 +20,13 @@ class Animation
         sf::Sprite& getSprite();
 
     private:
+        std::string  m_name;
         sf::Sprite   m_sprite;
         size_t       m_frame_count;
         size_t       m_current_frame;
         size_t       m_speed;
+        int          m_xoffset;
         sf::Vector2f m_size;
-        std::string  m_name;
 };
 
 #endif

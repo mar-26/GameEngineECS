@@ -4,20 +4,26 @@ Animation::Animation()
 {
 }
 
-Animation::Animation(const std::string& name, const sf::Texture& t)
-    : Animation(name, t, 1, 0)
+Animation::Animation(const std::string& name, const sf::Texture& t, const sf::Vector2f& size)
+    : Animation(name, t, 1, 0, 0, size)
 {
 }
 
-Animation::Animation(const std::string& name, const sf::Texture& t, size_t frameCount, size_t speed)
-    : m_name(name), m_sprite(t), m_frame_count(frameCount), m_speed(speed)
+Animation::Animation(const std::string& name, const sf::Texture& t, size_t frameCount, size_t speed, int xoffset, const sf::Vector2f& size)
+    : m_name(name), m_sprite(t), m_frame_count(frameCount), m_current_frame(0), m_speed(speed), m_xoffset(xoffset), m_size(size)
 {
-
+    m_sprite.setOrigin(m_size.x/2.f, m_size.y/2.f);
+    m_sprite.setTextureRect(sf::IntRect(0, 0, m_size.x, m_size.y));
 }
 
 void Animation::update()
 {
     m_current_frame++;
+
+    int animFrame = (m_current_frame / m_speed) % m_frame_count;
+//    printf("animation frame = %d next frame x = %d\n", animFrame, 40+animFrame*120);
+    sf::IntRect rect(animFrame*m_xoffset, 0, m_size.x, m_size.y);
+    m_sprite.setTextureRect(rect);
 }
 
 bool Animation::hasEnded() const

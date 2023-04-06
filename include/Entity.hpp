@@ -9,6 +9,7 @@
 typedef std::tuple<
     CTransform,
     CSprite,
+    CAnimation,
     CBoundingBox,
     CBoundingCircle,
     CSoundEffect,

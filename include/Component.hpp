@@ -1,6 +1,8 @@
 #ifndef COMPONENT_HPP
 #define COMPONENT_HPP
 
+#include "Animation.hpp"
+
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Audio/Sound.hpp>
@@ -83,6 +85,16 @@ class CBoundingBox : public Component
         CBoundingBox() {}
         CBoundingBox(sf::FloatRect rect)
             : m_box(rect), m_half_size(rect.width/2.f, rect.height/2.f) {}
+};
+
+class CAnimation : public Component
+{
+    public:
+        Animation m_animation;
+        bool m_repeat = false;
+        CAnimation() {}
+        CAnimation(const Animation& animation, bool r)
+            : m_animation(animation), m_repeat(r) {}
 };
 
 #endif
