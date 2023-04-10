@@ -3,6 +3,7 @@
 
 #include "Animation.hpp"
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Audio/Sound.hpp>
@@ -35,12 +36,9 @@ class CSprite : public Component
 
         CSprite() {}
         CSprite(const sf::Texture& texture)
-            : m_sprite(texture) {
+            : m_sprite(texture) 
+            {
                 m_sprite.setOrigin(m_sprite.getTextureRect().width/2.f, m_sprite.getTextureRect().height/2.f);
-            }
-        CSprite(const sf::Texture& texture, const sf::IntRect& rect)
-            : m_sprite(texture, rect) {
-                m_sprite.setOrigin(rect.width/2.f, rect.height/2.f);
             }
 };
 
@@ -79,12 +77,14 @@ class CBoundingCircle : public Component
 class CBoundingBox : public Component
 {
     public:
-        sf::FloatRect m_box;
+        Vector m_size;
         Vector m_half_size;
 
         CBoundingBox() {}
-        CBoundingBox(sf::FloatRect rect)
-            : m_box(rect), m_half_size(rect.width/2.f, rect.height/2.f) {}
+        CBoundingBox(Vector size)
+            : m_size(size), m_half_size(size.x/2.f, size.y/2.f) {}
+        CBoundingBox(sf::IntRect rect)
+            : m_size(rect.width, rect.height), m_half_size(rect.width/2.f, rect.height/2.f) {}
 };
 
 class CAnimation : public Component

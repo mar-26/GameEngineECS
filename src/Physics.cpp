@@ -2,9 +2,10 @@
 
 bool mouseRectHit(const Vector &mousePos, std::shared_ptr<Entity> entity)
 {
-    auto boundingBox = entity->getComponent<CBoundingBox>().m_box;
-    if (mousePos.x > boundingBox.left && mousePos.y > boundingBox.top &&
-        mousePos.x < boundingBox.left+boundingBox.width && mousePos.y < boundingBox.top+boundingBox.height)
+    auto boundingBox = entity->getComponent<CBoundingBox>().m_half_size;
+    auto position = entity->getComponent<CTransform>().m_position;
+    if (mousePos.x > position.x-(boundingBox.x) && mousePos.y > position.y-(boundingBox.y) &&
+        mousePos.x < position.x+(boundingBox.x) && mousePos.y < position.y+(boundingBox.y))
     {
         return true;
     }

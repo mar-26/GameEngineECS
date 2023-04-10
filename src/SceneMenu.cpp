@@ -11,6 +11,7 @@
 SceneMenu::SceneMenu(GameEngine* gameEngine)
     : Scene(gameEngine)
 {
+    std::cout << "Loading Menu\n";
     init();
 }
 
@@ -24,10 +25,10 @@ void SceneMenu::init()
     m_background.setTexture(m_scene_assets.getTexture("menu_background"));
     m_background.setTextureRect(sf::IntRect(0, 0, m_game->width(), m_game->height()));
 
-    Vector starshipButtonPosition = Vector(m_game->width()/2.f, m_game->height()/2.f);
-    Vector platformerButtonPosition = Vector(m_game->width()/2.f, (m_game->height()/2.f)+100);
     float buttonWidth = 200;
     float buttonHeight = 50;
+    Vector starshipButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f));
+    Vector platformerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+100);
 
     createButton("play_starship_button", starshipButtonPosition, "play_starship_button_texture", buttonWidth, buttonHeight);
     createButton("play_platformer_button", platformerButtonPosition, "play_platformer_button_texture", buttonWidth, buttonHeight);
@@ -68,7 +69,11 @@ void SceneMenu::sRender()
         if (e->hasComponent<CBoundingBox>() && m_debug)
         {
             auto box = e->getComponent<CBoundingBox>();
-            sf::Vertex* outline = debugRectangle(Vector(box.m_box.left, box.m_box.top), box.m_half_size, sf::Color::Red);
+            sf::Vertex* outline = debugRectangle(Vector(transform.m_position.x, transform.m_position.y), box.m_half_size, sf::Color::Red);
+            sf::Vertex* leftLine = debugLine(Vector(transform.m_position.x, 0), Vector(transform.m_position.x, m_game->height()), sf::Color::Green);
+            sf::Vertex* topLine = debugLine(Vector(0, transform.m_position.y), Vector(m_game->width(), transform.m_position.y), sf::Color::Green);
+            m_game->window().draw(leftLine, 2, sf::Lines);
+            m_game->window().draw(topLine, 2, sf::Lines);
             m_game->window().draw(outline, 5, sf::LineStrip);
         }
     }
@@ -121,7 +126,7 @@ void SceneMenu::createButton(const std::string& name, const Vector& position, co
     auto button = m_entity_manager.addEntity(name);
     button->addComponent<CTransform>(position);
     button->addComponent<CSprite>(m_scene_assets.getTexture(textureName));
-    button->addComponent<CBoundingBox>(sf::FloatRect(position.x-(width/2), position.y-(height/2), width, height));
+    button->addComponent<CBoundingBox>(Vector(width, height));
 }
 
 SceneMenu::~SceneMenu()

@@ -14,6 +14,7 @@
 SceneStarship::SceneStarship(GameEngine* gameEngine)
     : Scene(gameEngine)
 {
+    std::cout << "Loading Starship\n";
     init();
     m_debug_value = 1;
 }
@@ -267,7 +268,7 @@ void SceneStarship::spawnBullet(std::shared_ptr<Entity> entity, float angle)
 
 void SceneStarship::onEnd()
 {
-    m_game->changeScene("GAME", std::make_shared<SceneMenu>(m_game));
+    m_game->changeScene("MENU", std::make_shared<SceneMenu>(m_game));
 }
 
 SceneStarship::~SceneStarship()

@@ -29,11 +29,11 @@ sf::Vertex* debugLine(const Vector& p0, const Vector& p1, sf::Color color)
 sf::Vertex* debugRectangle(const Vector& p0, const Vector& halfsize, sf::Color color)
 {
     sf::Vertex* outline = new sf::Vertex[5];
-    outline[0] = sf::Vector2f(p0.x, p0.y),
-    outline[1] = sf::Vector2f(p0.x+halfsize.x*2, p0.y),
-    outline[2] = sf::Vector2f(p0.x+halfsize.x*2, p0.y+halfsize.y*2),
-    outline[3] = sf::Vector2f(p0.x, p0.y+halfsize.y*2),
-    outline[4] = sf::Vector2f(p0.x, p0.y);
+    outline[0] = sf::Vector2f(abs(p0.x-halfsize.x), abs(p0.y-halfsize.y)),
+    outline[1] = sf::Vector2f(abs(p0.x+halfsize.x), abs(p0.y-halfsize.y)),
+    outline[2] = sf::Vector2f(abs(p0.x+halfsize.x), abs(p0.y+halfsize.y)),
+    outline[3] = sf::Vector2f(abs(p0.x-halfsize.x), abs(p0.y+halfsize.y)),
+    outline[4] = sf::Vector2f(abs(p0.x-halfsize.x), abs(p0.y-halfsize.y)),
 
     outline[0].color = color;
     outline[1].color = color;
