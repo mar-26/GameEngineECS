@@ -20,13 +20,14 @@ class CTransform : public Component
 {
     public:
         Vector m_position = {};
+        Vector m_prev_position = {};
         Vector m_velocity = {};
         float m_angle = 0;
 
         CTransform() {}
-        CTransform(const Vector& pos) : m_position(pos) {}
+        CTransform(const Vector& pos) : m_position(pos), m_prev_position(pos) {}
         CTransform(const Vector& pos, const Vector& vel, float angle)
-            : m_position(pos), m_velocity(vel), m_angle(angle) {}
+            : m_position(pos), m_prev_position(pos), m_velocity(vel), m_angle(angle) {}
 };
 
 class CSprite : public Component
@@ -51,6 +52,7 @@ class CInput : public Component
         bool right = false;
         bool shoot = false;
         bool canShoot = true;
+        bool canJump = true;
 };
 
 class CSoundEffect : public Component
