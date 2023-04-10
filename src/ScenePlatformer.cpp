@@ -15,6 +15,7 @@
 ScenePlatformer::ScenePlatformer(GameEngine* gameEngine)
     : Scene(gameEngine)
 {
+    std::cout << "Loading Platformer\n";
     init();
     m_debug_value = 1;
 }
@@ -22,6 +23,8 @@ ScenePlatformer::ScenePlatformer(GameEngine* gameEngine)
 void ScenePlatformer::init()
 {
     registerAction(sf::Keyboard::Escape, "QUIT");
+    registerAction(sf::Keyboard::P, "PAUSE");
+    registerAction(sf::Keyboard::Space, "JUMP");
     registerAction(sf::Keyboard::A, "MOVE_LEFT");
     registerAction(sf::Keyboard::D, "MOVE_RIGHT");
 
@@ -30,11 +33,30 @@ void ScenePlatformer::init()
     m_background.setTexture(m_scene_assets.getTexture("background"));
     m_background.setTextureRect(sf::IntRect(0, 0, m_game->width(), m_game->height()));
 
+    m_player = m_entity_manager.addEntity("player");
+    m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
+    m_player->addComponent<CBoundingBox>(Vector(20, 40));
+    m_player->addComponent<CState>();
+    m_player->addComponent<CGravity>(Vector(0, 3));
+
+    createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x, m_game->height()));
+    createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*2, m_game->height()));
+    createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*3, m_game->height()));
 }
 
 void ScenePlatformer::loadAssets()
 {
     m_scene_assets.addTexture("background", "assets/textures/platformer_background.png", true, true);
+
+    m_scene_assets.addTexture("player_idle_texture", "assets/textures/player_idle.png", sf::IntRect(40, 40, 1110, 40), true, false);
+    m_scene_assets.addTexture("player_run_texture", "assets/textures/player_run.png", sf::IntRect(40, 40, 1120, 40), true, false);
+    m_scene_assets.addTexture("player_jump_texture", "assets/textures/player_jump.png", sf::IntRect(40, 40, 280, 40), true, false);
+
+    m_scene_assets.addTexture("ground_texture", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 224, 224), true, true);
+
+    m_scene_assets.addAnimation("player_idle_animation", m_scene_assets.getTexture("player_idle_texture"), 10, 5, 120, sf::Vector2f(30, 40));
+    m_scene_assets.addAnimation("player_run_animation", m_scene_assets.getTexture("player_run_texture"), 10, 5, 120, sf::Vector2f(40, 40));
+    m_scene_assets.addAnimation("player_jump_animation", m_scene_assets.getTexture("player_jump_texture"), 3, 5, 120, sf::Vector2f(40, 40));
 }
 
 void ScenePlatformer::update()
@@ -44,6 +66,7 @@ void ScenePlatformer::update()
     {
         sMovement();
         sCollisions();
+        sAnimation();
     }
 
 #ifdef DEBUG
@@ -58,22 +81,147 @@ void ScenePlatformer::update()
 
 void ScenePlatformer::sDoAction(const Action &action)
 {
+    auto& playerInput = m_player->getComponent<CInput>();
     if (action.type() == "START")
     {
         if (action.name() == "QUIT") { onEnd(); }
+        if (action.name() == "PAUSE") { setPaused(!m_paused); }
+        if (action.name() == "MOVE_LEFT") { playerInput.left = true; }
+        if (action.name() == "MOVE_RIGHT") { playerInput.right = true; }
+        if (action.name() == "JUMP") { playerInput.up = true; }
     }
     else if (action.type() == "END")
     {
+        if (action.name() == "MOVE_LEFT") { playerInput.left = false; }
+        if (action.name() == "MOVE_RIGHT") { playerInput.right = false; }
+        if (action.name() == "JUMP") { playerInput.up = false; playerInput.canJump = true; }
     }
 }
 
 void ScenePlatformer::sMovement()
 {
+    auto& playerInput = m_player->getComponent<CInput>();
+    auto& playerTransform = m_player->getComponent<CTransform>();
+    auto& playerAnimation = m_player->getComponent<CAnimation>().m_animation;
 
+    Vector force = {};
+
+    if (playerInput.left)
+    {
+        force += Vector(-0.5, 0);
+    }
+    else if (playerInput.right)
+    {
+        force += Vector(0.5, 0);
+    }
+
+    if (playerInput.up && playerInput.canJump && m_player->getComponent<CState>().m_state != "air")
+    {
+        force += Vector(0, -50);
+        m_player->getComponent<CState>().m_state = "air";
+        playerInput.canJump = false;
+    }
+
+    playerTransform.m_prev_position = playerTransform.m_position;
+
+    float drag = 0.7;
+
+    force += m_player->getComponent<CGravity>().m_gravity;
+    playerTransform.m_velocity += force;
+    playerTransform.m_velocity *= drag;
+    playerTransform.m_position += playerTransform.m_velocity;
 }
 
 void ScenePlatformer::sCollisions()
 {
+    auto& playerTransform = m_player->getComponent<CTransform>();
+
+    for (auto platform : m_entity_manager.getEntities("platform"))
+    {
+        auto platformTransform = platform->getComponent<CTransform>();
+
+        Vector overlap = rectRectCollision(m_player, platform);
+        Vector prevOverlap = prevRectRectCollision(m_player, platform);
+
+        if (overlap.x < 0 || overlap.y < 0) { continue; }
+
+        Vector diff = playerTransform.m_position - platformTransform.m_position;
+        Vector shift = {};
+
+        if (prevOverlap.x > 0)
+        {
+            shift.y = diff.y > 0 ? overlap.y : -overlap.y;
+            playerTransform.m_velocity.y = 0;
+            if (diff.y < 0)
+            {
+                playerTransform.m_position += (platformTransform.m_velocity);
+            }
+        }
+        else if (prevOverlap.y > 0)
+        {
+            shift.x += diff.x > 0 ? overlap.x : -overlap.x;
+            playerTransform.m_velocity.x = 0;
+        }
+        m_player->getComponent<CState>().m_state = "ground";
+        playerTransform.m_position += shift;
+    }
+
+    if (playerTransform.m_position.x < m_player->getComponent<CBoundingBox>().m_half_size.x)
+    {
+        playerTransform.m_position.x = m_player->getComponent<CBoundingBox>().m_half_size.x;
+    }
+}
+
+void ScenePlatformer::sAnimation()
+{
+    auto& playerTransform = m_player->getComponent<CTransform>();
+    auto playerInput = m_player->getComponent<CInput>();
+    auto playerState = m_player->getComponent<CState>().m_state;
+    
+    if (playerState == "air")
+    {
+        if (m_player->getComponent<CAnimation>().m_animation.getName() != "player_jump_animation")
+        {
+            m_player->addComponent<CAnimation>(m_scene_assets.getAnimation("player_jump_animation"), false);
+        }
+    }
+
+    if (playerState == "ground")
+    {
+        if (playerInput.left || playerInput.right)
+        {
+            if (m_player->getComponent<CAnimation>().m_animation.getName() != "player_run_animation")
+            {
+                m_player->addComponent<CAnimation>(m_scene_assets.getAnimation("player_run_animation"), true);
+            }
+        }
+        else
+        {
+            if (m_player->getComponent<CAnimation>().m_animation.getName() != "player_idle_animation")
+            {
+                m_player->addComponent<CAnimation>(m_scene_assets.getAnimation("player_idle_animation"), true);
+            }
+        }
+    }
+
+
+    m_player->getComponent<CAnimation>().m_animation.update();
+
+    for (auto e : m_entity_manager.getEntities())
+    {
+        if (!e->hasComponent<CAnimation>()) { continue; }
+
+        auto& animation = e->getComponent<CAnimation>();
+
+        if (animation.m_animation.hasEnded() && !animation.m_repeat)
+        {
+            e->destroy();
+        }
+        else
+        {
+            animation.m_animation.update();
+        }
+    }
 }
 
 void ScenePlatformer::sRender()
@@ -99,18 +247,48 @@ void ScenePlatformer::sRender()
             }
         }
 
+        auto playerTransform = m_player->getComponent<CTransform>();
+        auto playerBox = m_player->getComponent<CBoundingBox>().m_half_size;
+        auto& playerAnimation = m_player->getComponent<CAnimation>();
+
+        playerAnimation.m_animation.getSprite().setPosition(sf::Vector2f(playerTransform.m_position.x, playerTransform.m_position.y));
+        m_game->window().draw(playerAnimation.m_animation.getSprite());
+
+        if (m_debug)
+        {
+            sf::Vertex* outline = debugRectangle(playerTransform.m_position, playerBox, sf::Color::Red);
+            m_game->window().draw(outline, 5, sf::LineStrip);
+        }
+
+
         for (auto e : m_entity_manager.getEntities())
         {
             auto transform = e->getComponent<CTransform>();
-            auto& sprite = e->getComponent<CSprite>().m_sprite;
-            sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
-            m_game->window().draw(sprite);
+
+            if (e->hasComponent<CAnimation>())
+            {
+                auto& animation = e->getComponent<CAnimation>().m_animation;
+                animation.getSprite().setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+                m_game->window().draw(animation.getSprite());
+            }
+            else
+            {
+                auto& sprite = e->getComponent<CSprite>().m_sprite;
+                sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+                m_game->window().draw(sprite);
+            }
+
+            if (m_debug && e->hasComponent<CBoundingBox>())
+            {
+                auto box = e->getComponent<CBoundingBox>();
+                sf::Vertex* outline = debugRectangle(transform.m_position, box.m_half_size, sf::Color::Red);
+                m_game->window().draw(outline, 5, sf::LineStrip);
+            }
 
         }
     }
     else
     {
-        m_game->window().clear();
     }
 
 #ifdef DEBUG
@@ -119,9 +297,18 @@ void ScenePlatformer::sRender()
 
 }
 
+void ScenePlatformer::createPlatform(const std::string& name, const sf::Texture& t, const Vector& position)
+{
+    auto platform = m_entity_manager.addEntity(name);
+    platform->addComponent<CSprite>(t);
+    sf::IntRect spriteRect = platform->getComponent<CSprite>().m_sprite.getTextureRect();
+    platform->addComponent<CTransform>(Vector(position.x-spriteRect.width/2.f, position.y - spriteRect.height/2.f));
+    platform->addComponent<CBoundingBox>(spriteRect);
+}
+
 void ScenePlatformer::onEnd()
 {
-    m_game->changeScene("GAME", std::make_shared<SceneMenu>(m_game));
+    m_game->changeScene("MENU", std::make_shared<SceneMenu>(m_game));
 }
 
 ScenePlatformer::~ScenePlatformer()
