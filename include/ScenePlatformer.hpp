@@ -15,6 +15,7 @@ class ScenePlatformer : public Scene
         void sRender() override;
         void sDoAction(const Action& action) override;
         void sCollisions() override;
+        void sAnimation();
         void sMovement();
 
         struct PlayerStats
@@ -36,7 +37,7 @@ class ScenePlatformer : public Scene
         void update() override;
         void onEnd() override;
         void loadAssets() override;
-        
+        void createPlatform(const std::string& name, const sf::Texture& t, const Vector& position);
 };
 
 #endif
