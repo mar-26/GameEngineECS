@@ -35,13 +35,14 @@ void ScenePlatformer::init()
 
     m_player = m_entity_manager.addEntity("player");
     m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
-    m_player->addComponent<CBoundingBox>(Vector(20, 40));
+    m_player->addComponent<CBoundingBox>(Vector(25, 60));
     m_player->addComponent<CState>();
     m_player->addComponent<CGravity>(Vector(0, 3));
 
     createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x, m_game->height()));
     createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*2, m_game->height()));
     createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*3, m_game->height()));
+    createPlatform("platform", m_scene_assets.getTexture("platform_texture"), Vector(m_game->width()-300, (m_game->height()/2.f)+100));
 }
 
 void ScenePlatformer::loadAssets()
@@ -51,12 +52,15 @@ void ScenePlatformer::loadAssets()
     m_scene_assets.addTexture("player_idle_texture", "assets/textures/player_idle.png", sf::IntRect(40, 40, 1110, 40), true, false);
     m_scene_assets.addTexture("player_run_texture", "assets/textures/player_run.png", sf::IntRect(40, 40, 1120, 40), true, false);
     m_scene_assets.addTexture("player_jump_texture", "assets/textures/player_jump.png", sf::IntRect(40, 40, 280, 40), true, false);
+    m_scene_assets.addTexture("player_attack1_texture", "assets/textures/player_attack.png", sf::IntRect(50, 30, 430, 50), true, false);
 
     m_scene_assets.addTexture("ground_texture", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 224, 224), true, true);
+    m_scene_assets.addTexture("platform_texture", "assets/textures/scifi_platform_tiles.png", sf::IntRect(864, 384, 256, 32), true, true);
 
     m_scene_assets.addAnimation("player_idle_animation", m_scene_assets.getTexture("player_idle_texture"), 10, 5, 120, sf::Vector2f(30, 40));
     m_scene_assets.addAnimation("player_run_animation", m_scene_assets.getTexture("player_run_texture"), 10, 5, 120, sf::Vector2f(40, 40));
     m_scene_assets.addAnimation("player_jump_animation", m_scene_assets.getTexture("player_jump_texture"), 3, 5, 120, sf::Vector2f(40, 40));
+    m_scene_assets.addAnimation("player_attack1_animation", m_scene_assets.getTexture("player_attack1_texture"), 4, 4, 120, sf::Vector2f(70, 50));
 }
 
 void ScenePlatformer::update()
@@ -89,12 +93,14 @@ void ScenePlatformer::sDoAction(const Action &action)
         if (action.name() == "MOVE_LEFT") { playerInput.left = true; }
         if (action.name() == "MOVE_RIGHT") { playerInput.right = true; }
         if (action.name() == "JUMP") { playerInput.up = true; }
+        if (action.name() == "MOUSE_LEFT") {playerInput.shoot = true; }
     }
     else if (action.type() == "END")
     {
         if (action.name() == "MOVE_LEFT") { playerInput.left = false; }
         if (action.name() == "MOVE_RIGHT") { playerInput.right = false; }
         if (action.name() == "JUMP") { playerInput.up = false; playerInput.canJump = true; }
+        if (action.name() == "MOUSE_LEFT") {playerInput.shoot = false; }
     }
 }
 
@@ -104,20 +110,21 @@ void ScenePlatformer::sMovement()
     auto& playerTransform = m_player->getComponent<CTransform>();
     auto& playerAnimation = m_player->getComponent<CAnimation>().m_animation;
 
-    Vector force = {};
+    Vector xForce = {};
+    Vector yForce = {};
 
     if (playerInput.left)
     {
-        force += Vector(-0.5, 0);
+        xForce += Vector(-2, 0);
     }
     else if (playerInput.right)
     {
-        force += Vector(0.5, 0);
+        xForce += Vector(2, 0);
     }
 
     if (playerInput.up && playerInput.canJump && m_player->getComponent<CState>().m_state != "air")
     {
-        force += Vector(0, -50);
+        yForce += Vector(0, -100);
         m_player->getComponent<CState>().m_state = "air";
         playerInput.canJump = false;
     }
@@ -126,8 +133,9 @@ void ScenePlatformer::sMovement()
 
     float drag = 0.7;
 
-    force += m_player->getComponent<CGravity>().m_gravity;
-    playerTransform.m_velocity += force;
+    xForce += m_player->getComponent<CGravity>().m_gravity;
+    playerTransform.m_velocity += xForce;
+    playerTransform.m_velocity += yForce;
     playerTransform.m_velocity *= drag;
     playerTransform.m_position += playerTransform.m_velocity;
 }
@@ -166,6 +174,11 @@ void ScenePlatformer::sCollisions()
         playerTransform.m_position += shift;
     }
 
+    if (playerTransform.m_position.y > m_game->height()-m_player->getComponent<CBoundingBox>().m_half_size.y)
+    {
+        playerTransform.m_position = Vector(m_game->width()/2.f, m_game->height()/2.f);
+    }
+
     if (playerTransform.m_position.x < m_player->getComponent<CBoundingBox>().m_half_size.x)
     {
         playerTransform.m_position.x = m_player->getComponent<CBoundingBox>().m_half_size.x;
@@ -185,10 +198,16 @@ void ScenePlatformer::sAnimation()
             m_player->addComponent<CAnimation>(m_scene_assets.getAnimation("player_jump_animation"), false);
         }
     }
-
-    if (playerState == "ground")
+    else if (playerState == "ground")
     {
-        if (playerInput.left || playerInput.right)
+        if (playerInput.shoot)
+        {
+            if (m_player->getComponent<CAnimation>().m_animation.getName() != "player_attack1_animation")
+            {
+                m_player->addComponent<CAnimation>(m_scene_assets.getAnimation("player_attack1_animation"), false);
+            }
+        }
+        else if (playerInput.left || playerInput.right)
         {
             if (m_player->getComponent<CAnimation>().m_animation.getName() != "player_run_animation")
             {
@@ -203,6 +222,7 @@ void ScenePlatformer::sAnimation()
             }
         }
     }
+
 
 
     m_player->getComponent<CAnimation>().m_animation.update();
@@ -252,6 +272,15 @@ void ScenePlatformer::sRender()
         auto& playerAnimation = m_player->getComponent<CAnimation>();
 
         playerAnimation.m_animation.getSprite().setPosition(sf::Vector2f(playerTransform.m_position.x, playerTransform.m_position.y));
+        playerAnimation.m_animation.getSprite().setScale(sf::Vector2f(1.5, 1.5));
+        if (playerTransform.m_velocity.x < 0)
+        {
+            playerAnimation.m_animation.getSprite().setScale(sf::Vector2f(-1.5, 1.5));
+        }
+        else if (playerTransform.m_velocity.x > 0)
+        {
+            playerAnimation.m_animation.getSprite().setScale(sf::Vector2f(1.5, 1.5));
+        }
         m_game->window().draw(playerAnimation.m_animation.getSprite());
 
         if (m_debug)
