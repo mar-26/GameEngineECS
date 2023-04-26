@@ -20,7 +20,9 @@ class ScenePlatformer : public Scene
 
         struct PlayerStats
         {
-            float speed = 5;
+            float speed = 1000;
+            float drag = 7;
+            float jumpForce = 2000;
         };
 
     private:
@@ -32,6 +34,7 @@ class ScenePlatformer : public Scene
         sf::Clock               m_delta_clock;
         bool                    m_debug = false;
         float                   m_debug_value = 5;
+        float                   m_dt = 0.01666667;
         
         void init();
         void update() override;

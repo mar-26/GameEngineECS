@@ -37,12 +37,12 @@ void ScenePlatformer::init()
     m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
     m_player->addComponent<CBoundingBox>(Vector(25, 60));
     m_player->addComponent<CState>();
-    m_player->addComponent<CGravity>(Vector(0, 3));
+    m_player->addComponent<CGravity>(Vector(0, 2000));
 
     createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x, m_game->height()));
     createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*2, m_game->height()));
     createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*3, m_game->height()));
-    createPlatform("platform", m_scene_assets.getTexture("platform_texture"), Vector(m_game->width()-300, (m_game->height()/2.f)+100));
+    createPlatform("platform", m_scene_assets.getTexture("platform_texture"), Vector(m_scene_assets.getTexture("platform_texture").getSize().x+700, (m_game->height()/2.f)+100));
 }
 
 void ScenePlatformer::loadAssets()
@@ -77,7 +77,7 @@ void ScenePlatformer::update()
     ImGui::SFML::Update(m_game->window(), m_delta_clock.restart());
     ImGui::Begin("Debug");
     ImGui::Checkbox("Debug", &m_debug);
-    ImGui::SliderFloat("debug value", &m_debug_value, 0.1, 1);
+    ImGui::SliderFloat("player jump", &m_player_stats.jumpForce, 1000, 2000);
     ImGui::End();
 #endif
 
@@ -108,42 +108,47 @@ void ScenePlatformer::sMovement()
 {
     auto& playerInput = m_player->getComponent<CInput>();
     auto& playerTransform = m_player->getComponent<CTransform>();
-    auto& playerAnimation = m_player->getComponent<CAnimation>().m_animation;
+    auto& playerState = m_player->getComponent<CState>().m_state;
 
-    Vector xForce = {};
-    Vector yForce = {};
+    Vector acceleration = {};
+
+    if (playerState != "ground")
+    {
+        acceleration.y = m_player->getComponent<CGravity>().m_gravity.y;
+    }
 
     if (playerInput.left)
     {
-        xForce += Vector(-2, 0);
+        acceleration.x -= m_player_stats.speed;
     }
     else if (playerInput.right)
     {
-        xForce += Vector(2, 0);
+        acceleration.x += m_player_stats.speed;
     }
 
-    if (playerInput.up && playerInput.canJump && m_player->getComponent<CState>().m_state != "air")
+    if (playerInput.up && playerInput.canJump && playerState == "ground")
     {
-        yForce += Vector(0, -100);
-        m_player->getComponent<CState>().m_state = "air";
+        playerTransform.m_velocity.y -= m_player_stats.jumpForce;
         playerInput.canJump = false;
     }
 
+
+    Vector dragForce = playerTransform.m_velocity * -m_player_stats.drag;
+    acceleration += dragForce;
+
     playerTransform.m_prev_position = playerTransform.m_position;
+    playerTransform.m_velocity += acceleration * m_dt;
+    playerTransform.m_position += playerTransform.m_velocity * m_dt + (acceleration*0.5f) * m_dt * m_dt;
 
-    float drag = 0.7;
-
-    xForce += m_player->getComponent<CGravity>().m_gravity;
-    playerTransform.m_velocity += xForce;
-    playerTransform.m_velocity += yForce;
-    playerTransform.m_velocity *= drag;
-    playerTransform.m_position += playerTransform.m_velocity;
 }
 
 void ScenePlatformer::sCollisions()
 {
     auto& playerTransform = m_player->getComponent<CTransform>();
 
+    m_player->getComponent<CState>().m_state = "air";
+
+    int count = 0;
     for (auto platform : m_entity_manager.getEntities("platform"))
     {
         auto platformTransform = platform->getComponent<CTransform>();
@@ -162,7 +167,8 @@ void ScenePlatformer::sCollisions()
             playerTransform.m_velocity.y = 0;
             if (diff.y < 0)
             {
-                playerTransform.m_position += (platformTransform.m_velocity);
+                m_player->getComponent<CState>().m_state = "ground";
+                playerTransform.m_position += platformTransform.m_velocity;
             }
         }
         else if (prevOverlap.y > 0)
@@ -170,8 +176,8 @@ void ScenePlatformer::sCollisions()
             shift.x += diff.x > 0 ? overlap.x : -overlap.x;
             playerTransform.m_velocity.x = 0;
         }
-        m_player->getComponent<CState>().m_state = "ground";
         playerTransform.m_position += shift;
+        count++;
     }
 
     if (playerTransform.m_position.y > m_game->height()-m_player->getComponent<CBoundingBox>().m_half_size.y)
@@ -286,7 +292,11 @@ void ScenePlatformer::sRender()
         if (m_debug)
         {
             sf::Vertex* outline = debugRectangle(playerTransform.m_position, playerBox, sf::Color::Red);
+            sf::Vertex* centerLineX = debugLine(Vector(playerTransform.m_position.x-playerBox.x, playerTransform.m_position.y), Vector(playerTransform.m_position.x+playerBox.x, playerTransform.m_position.y), sf::Color::Green);
+            sf::Vertex* centerLineY = debugLine(Vector(playerTransform.m_position.x, playerTransform.m_position.y-playerBox.y), Vector(playerTransform.m_position.x, playerTransform.m_position.y+playerBox.y), sf::Color::Green);
             m_game->window().draw(outline, 5, sf::LineStrip);
+            m_game->window().draw(centerLineX, 2, sf::Lines);
+            m_game->window().draw(centerLineY, 2, sf::Lines);
         }
 
 
@@ -311,6 +321,10 @@ void ScenePlatformer::sRender()
             {
                 auto box = e->getComponent<CBoundingBox>();
                 sf::Vertex* outline = debugRectangle(transform.m_position, box.m_half_size, sf::Color::Red);
+                sf::Vertex* centerLineX = debugLine(Vector(transform.m_position.x-box.m_half_size.x, transform.m_position.y), Vector(transform.m_position.x+box.m_half_size.x, transform.m_position.y), sf::Color::Green);
+                sf::Vertex* centerLineY = debugLine(Vector(transform.m_position.x, transform.m_position.y-box.m_half_size.y), Vector(transform.m_position.x, transform.m_position.y+box.m_half_size.y), sf::Color::Green);
+                m_game->window().draw(centerLineX, 2, sf::Lines);
+                m_game->window().draw(centerLineY, 2, sf::Lines);
                 m_game->window().draw(outline, 5, sf::LineStrip);
             }
 

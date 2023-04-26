@@ -111,7 +111,7 @@ class CGravity : public Component
 class CState : public Component
 {
     public:
-        std::string m_state = "ground";
+        std::string m_state = "air";
         CState() {}
         CState(const std::string& s)
             : m_state(s) {}
