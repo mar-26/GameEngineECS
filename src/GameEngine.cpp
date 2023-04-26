@@ -5,6 +5,7 @@
 #include "../include/imgui-sfml/imgui-SFML.h"
 
 #include <SFML/Window/Event.hpp>
+#include <SFML/OpenGL.hpp>
 
 #include <iostream>
 
@@ -22,6 +23,7 @@ void GameEngine::init()
 {
     m_window.create(sf::VideoMode(m_width, m_height), m_window_title);
     m_window.setFramerateLimit(60);
+    m_window.setActive(true);
 
 #ifdef DEBUG
     ImGui::SFML::Init(m_window);
@@ -77,6 +79,10 @@ void GameEngine::sUserInput()
         if (event.type == sf::Event::Closed)
         {
             quit();
+        }
+        else if (event.type == sf::Event::Resized)
+        {
+            glViewport(0, 0, event.size.width, event.size.height);
         }
 
         if (event.type == sf::Event::KeyPressed || event.type == sf::Event::KeyReleased)
