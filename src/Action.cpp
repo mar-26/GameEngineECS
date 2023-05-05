@@ -18,6 +18,12 @@ Action::Action(const std::string& name, const std::string& type, const Vector& p
 
 }
 
+Action::Action(const std::string& name, const std::string& type, const Vector& pos, const int& delta)
+    : m_name(name), m_type(type), m_pos(pos), m_delta(delta)
+{
+
+}
+
 const std::string& Action::name() const
 {
     return m_name;
@@ -31,6 +37,11 @@ const std::string& Action::type() const
 const Vector& Action::pos() const
 {
     return m_pos;
+}
+
+const int& Action::delta() const
+{
+    return m_delta;
 }
 
 std::string Action::toString() const
