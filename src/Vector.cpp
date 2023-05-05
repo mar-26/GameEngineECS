@@ -11,9 +11,10 @@ Vector Vector::normalize()
 	float l = magnitude();
 	if (l > 0)
 	{
-		(*this) *= ((float)1)/l;
+//		(*this) *= ((float)1)/l;
+		return Vector(x*((float)1/l), y*((float)1/l));
 	}
-	return *this;
+	return (*this);
 }
 
 float Vector::magnitude() const
@@ -69,4 +70,13 @@ std::ostream& operator<<(std::ostream& os, const Vector& v)
 {
 	os << "<" << v.x << ", " << v.y << ">";
 	return os;
+}
+
+bool operator==(const Vector& v1, const Vector& v2)
+{
+	if (v1.x == v2.x && v1.y == v2.y)
+	{
+		return true;
+	}
+	return false;
 }
