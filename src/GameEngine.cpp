@@ -153,6 +153,10 @@ void GameEngine::sUserInput()
         {
             currentScene()->sDoAction(Action("MOUSE_MOVE", "START", Vector(event.mouseMove.x, event.mouseMove.y)));
         }
+        if (event.type == sf::Event::MouseWheelMoved)
+        {
+            currentScene()->sDoAction(Action("MOUSE_WHEEL", "START", Vector(event.mouseWheel.x, event.mouseWheel.y), event.mouseWheel.delta));
+        }
     }
 }
 

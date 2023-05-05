@@ -2,6 +2,8 @@
 #define SCENEISOMETRIC_HPP
 
 #include "Scene.hpp"
+#include "Matrix.hpp"
+
 
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/Sprite.hpp>
@@ -35,7 +37,7 @@ class SceneIsometric : public Scene
         bool                    m_debug = false;
         float                   m_debug_value = 5;
         float                   m_scale = 1;
-        float                   m_skew = 1;
+        float                   m_skew = 0;
         float                   m_angle = 0;
         float                   m_dt = 0.01666667;
         
@@ -43,8 +45,6 @@ class SceneIsometric : public Scene
         void update() override;
         void onEnd() override;
         void loadAssets() override;
-        void createPlatform(const std::string& name, const sf::Texture& t, const Vector& position);
-        Vector matrixMult(Vector pos);
 };
 
 #endif

@@ -8,7 +8,7 @@ Matrix::Matrix(int rows, int columns)
     {
         for (int j = 0; j < m_columns; j++)
         {
-            (*this)(i, j) = j+i*m_rows;
+            (*this)(i, j) = 0;
         }
     }
 }
@@ -49,8 +49,8 @@ Vector Matrix::operator*(const Vector& v) const
 {
     Vector result;
 
-    result.x = (*this)(0, 0) * v.x + (*this)(0, 1) * v.y;
-    result.y = (*this)(1, 0) * v.x + (*this)(1, 1) * v.y;
+    result.x = (*this)(0, 0) * v.x + (*this)(0, 1) * v.y + (*this)(0, 2) * v.z;
+    result.y = (*this)(1, 0) * v.x + (*this)(1, 1) * v.y + (*this)(1, 2) * v.z;
     
     return result;
 }

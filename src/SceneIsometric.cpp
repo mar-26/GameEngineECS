@@ -90,66 +90,13 @@ void randomColor()
     glColor3f(r, g, b);
 }
 
-void drawRect(float x, float y, float size, sf::Vector3f color)
-{
-    glBegin(GL_TRIANGLE_STRIP);
-        glColor3f(color.x, color.y, color.z);
-        glVertex2f(x - size, y + size);
-        glVertex2f(x - size, y - size);
-        glVertex2f(x + size, y + size);
-        glVertex2f(x + size, y - size);
-        glVertex2f(x - size, y - size);
-    glEnd();
-}
-
-void drawRect(Vector pos, float size, sf::Vector3f color)
-{
-    glBegin(GL_TRIANGLE_STRIP);
-        glColor3f(color.x, color.y, color.z);
-        glVertex2f(pos.x - size, pos.y + size);
-        glVertex2f(pos.x - size, pos.y - size);
-        glVertex2f(pos.x + size, pos.y + size);
-        glVertex2f(pos.x + size, pos.y - size);
-        glVertex2f(pos.x - size, pos.y - size);
-    glEnd();
-}
-
-Vector SceneIsometric::matrixMult(Vector pos)
-{
-    return Vector(pos.x*cos(m_angle) + pos.y*(cos(m_angle)*(m_scale*tan(m_skew))+(-sin(m_angle)*m_scale)), pos.x*sin(m_angle) + pos.y*(sin(m_angle)*(m_scale*tan(m_skew))+(cos(m_angle)*m_scale)));
-}
-
 void SceneIsometric::sRender()
 {
     if (!m_paused)
     {
         m_game->window().clear(sf::Color::White);
 
-        Vector position(m_game->width()/2.f, m_game->height()/2.f);
-
-        drawRect(position, 10, sf::Vector3f(1, 0, 0));
-
         float size = 10;
-        Vector v1(position.x - size, position.y + size);
-        Vector v2(position.x - size, position.y - size);
-        Vector v3(position.x + size, position.y + size);
-        Vector v4(position.x + size, position.y - size);
-        Vector v5(position.x - size, position.y - size);
-
-        Vector newV1 = matrixMult(v1);
-        Vector newV2 = matrixMult(v2);
-        Vector newV3 = matrixMult(v3);
-        Vector newV4 = matrixMult(v4);
-        Vector newV5 = matrixMult(v5);
-
-        glBegin(GL_TRIANGLE_STRIP);
-            glColor3f(0, 1, 0);
-            glVertex2f(newV1.x, newV1.y);
-            glVertex2f(newV2.x, newV2.y);
-            glVertex2f(newV3.x, newV3.y);
-            glVertex2f(newV4.x, newV4.y);
-            glVertex2f(newV5.x, newV5.y);
-        glEnd();
 
     }
     else
