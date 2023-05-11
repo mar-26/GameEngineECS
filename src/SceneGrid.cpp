@@ -21,6 +21,10 @@ SceneStaticAnalysis::SceneStaticAnalysis(GameEngine* gameEngine)
     m_debug_value = 1;
     m_view.setSize(m_game->width(), m_game->height());
     m_view.setCenter(m_game->width()/2, m_game->height()/2);
+
+    m_hud_view.setSize(m_game->width(), 200);
+    m_hud_view.setCenter(m_game->width()/2, m_game->height()/2);
+    m_hud_view.setViewport(sf::FloatRect(0, m_game->height()-200, 1, 1));
 }
 
 void SceneStaticAnalysis::init()
@@ -49,9 +53,13 @@ void SceneStaticAnalysis::update()
     ImGui::SFML::Update(m_game->window(), m_delta_clock.restart());
     ImGui::Begin("Debug");
     ImGui::Checkbox("Debug", &m_debug);
-    ImGui::Text("m_zoom = %f", m_zoom);
+    ImGui::SliderFloat("hud height", &m_debug_value, 0, m_game->height());
     ImGui::End();
 #endif
+
+    m_hud_view.setSize(m_game->width(), m_debug_value);
+    m_hud_view.setCenter(m_game->width()/2, m_game->height()/2);
+    m_hud_view.setViewport(sf::FloatRect(0, m_game->height()-m_debug_value, 1, 1));
 
 }
 
@@ -151,6 +159,11 @@ void SceneStaticAnalysis::sRender()
                 m_game->window().draw(verticalLine, 2, sf::Lines);
             }
         }
+
+        m_game->window().setView(m_hud_view);
+        sf::RectangleShape hud(sf::Vector2f(m_game->width(), m_debug_value));
+        hud.setFillColor(sf::Color::Red);
+        m_game->window().draw(hud);
     }
     else
     {

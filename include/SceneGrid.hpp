@@ -27,6 +27,7 @@ class SceneStaticAnalysis : public Scene
         sf::Text                m_menu_title;
         sf::Clock               m_delta_clock;
         sf::View                m_view;
+        sf::View                m_hud_view;
         bool                    m_debug = false;
         float                   m_debug_value = 5;
         float                   m_dt = 0.01666667;
