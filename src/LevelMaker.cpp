@@ -11,7 +11,13 @@
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
+
 #include <memory>
+#include <fstream>
+#include <iomanip>
+#include <chrono>
+#include <random>
+#include <sstream>
 
 LevelMaker::LevelMaker(GameEngine* gameEngine)
     : Scene(gameEngine)
@@ -39,14 +45,16 @@ void LevelMaker::init()
 void LevelMaker::loadAssets()
 {
     m_scene_assets.addTexture("platformer_background", "assets/textures/platformer_background.png", true, true);
+
+    m_scene_assets.addTexture("save_button_texture", "assets/textures/buttons/save_button.png", true, false);
+    m_scene_assets.addTexture("quit_button_texture", "assets/textures/buttons/quit_button.png", true, false);
+
     m_scene_assets.addTexture("white_floor", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 32, 32), true, false);
     m_scene_assets.addTexture("caution_top_left", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 128, 32, 32), true, false);
     m_scene_assets.addTexture("caution_top_right", "assets/textures/scifi_platform_tiles.png", sf::IntRect(192, 128, 32, 32), true, false);
     m_scene_assets.addTexture("caution_bottom_left", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 160, 32, 32), true, false);
     m_scene_assets.addTexture("caution_bottom_right", "assets/textures/scifi_platform_tiles.png", sf::IntRect(192, 160, 32, 32), true, false);
     m_scene_assets.addTexture("xbox", "assets/textures/scifi_platform_tiles.png", sf::IntRect(96, 160, 32, 32), true, false);
-    m_scene_assets.addTexture("save_button_texture", "assets/textures/buttons/save_button.png", true, false);
-    m_scene_assets.addTexture("quit_button_texture", "assets/textures/buttons/quit_button.png", true, false);
 }
 
 void LevelMaker::update()
@@ -120,7 +128,10 @@ void LevelMaker::sDoAction(const Action &action)
                 {
                     if (button->getComponent<CAux>().m_aux == "save" && mouseRectHit(action.pos(), button))
                     {
-                        saveLevel();
+                        if(saveLevel())
+                        {
+                            onEnd();
+                        }
                     }
                     if (button->getComponent<CAux>().m_aux == "quit" && mouseRectHit(action.pos(), button))
                     {
@@ -310,22 +321,55 @@ void LevelMaker::createButton(const std::string& name, const Vector& position, c
     button->addComponent<CAux>(name);
 }
 
+std::string GenerateUniqueFileName(const std::string& directory)
+{
+    // Get the current timestamp
+    auto now = std::chrono::system_clock::now();
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    
+    // Convert the timestamp to a string
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time), "%Y%m%d%H%M%S");
+    
+    // Generate a random number
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(1, 1000);
+    int randomNum = dis(gen);
+    
+    // Combine the timestamp and random number to create the unique filename
+    std::string uniqueFileName = directory + "/level_" + ss.str() + "_" + std::to_string(randomNum) + ".txt";
+    
+    return uniqueFileName;
+}
+
 bool LevelMaker::saveLevel()
 {
+    std::string fileName = GenerateUniqueFileName("../levels");
+    std::ofstream outputFile(fileName);
+
+    if (!outputFile)
+    {
+        std::cout << "Error opening " << fileName << "\n";
+        return false;
+    }
     for (auto tile : m_entity_manager.getEntities("tile"))
     {
         Vector tileTransform = tile->getComponent<CTransform>().m_position;
-        std::cout << tile->getComponent<CAux>().m_aux << " " << tileTransform.x << " " << tileTransform.y << " ";
+        outputFile << tile->getComponent<CAux>().m_aux << " " << tileTransform.x << " " << tileTransform.y << " ";
         if (tile->hasComponent<CBoundingBox>())
         {
-            std::cout << "C";
+            outputFile << "C";
         }
         else
         {
-            std::cout << "N";
+            outputFile << "N";
         }
-        std::cout << "\n";
+        outputFile << "\n";
     }
+
+    outputFile.close();
+    return true;
 }
 
 LevelMaker::~LevelMaker()

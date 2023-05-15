@@ -40,7 +40,8 @@ class ScenePlatformer : public Scene
         void update() override;
         void onEnd() override;
         void loadAssets() override;
-        void createPlatform(const std::string& name, const sf::Texture& t, const Vector& position);
+        bool loadLevel(const std::string& fileName);
+        void createTile(const std::string& textureName, const Vector& position, bool collision);
 };
 
 #endif

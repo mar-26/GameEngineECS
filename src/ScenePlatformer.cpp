@@ -10,7 +10,9 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Window/Keyboard.hpp>
+
 #include <memory>
+#include <fstream>
 
 ScenePlatformer::ScenePlatformer(GameEngine* gameEngine)
     : Scene(gameEngine)
@@ -33,16 +35,18 @@ void ScenePlatformer::init()
     m_background.setTexture(m_scene_assets.getTexture("background"));
     m_background.setTextureRect(sf::IntRect(0, 0, m_game->width(), m_game->height()));
 
+    if (!loadLevel("../levels/level_20230515141728_123.txt"))
+    {
+        std::cout << "File failed to loaded\n";
+        m_game->quit();
+    }
+
     m_player = m_entity_manager.addEntity("player");
     m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
     m_player->addComponent<CBoundingBox>(Vector(25, 60));
     m_player->addComponent<CState>();
     m_player->addComponent<CGravity>(Vector(0, 2000));
 
-    createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x, m_game->height()));
-    createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*2, m_game->height()));
-    createPlatform("platform", m_scene_assets.getTexture("ground_texture"), Vector(m_scene_assets.getTexture("ground_texture").getSize().x*3, m_game->height()));
-    createPlatform("platform", m_scene_assets.getTexture("platform_texture"), Vector(m_scene_assets.getTexture("platform_texture").getSize().x+700, (m_game->height()/2.f)+100));
 }
 
 void ScenePlatformer::loadAssets()
@@ -54,13 +58,17 @@ void ScenePlatformer::loadAssets()
     m_scene_assets.addTexture("player_jump_texture", "assets/textures/player_jump.png", sf::IntRect(40, 40, 280, 40), true, false);
     m_scene_assets.addTexture("player_attack1_texture", "assets/textures/player_attack.png", sf::IntRect(50, 30, 430, 50), true, false);
 
-    m_scene_assets.addTexture("ground_texture", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 224, 224), true, true);
-    m_scene_assets.addTexture("platform_texture", "assets/textures/scifi_platform_tiles.png", sf::IntRect(864, 384, 256, 32), true, true);
-
     m_scene_assets.addAnimation("player_idle_animation", m_scene_assets.getTexture("player_idle_texture"), 10, 5, 120, sf::Vector2f(30, 40));
     m_scene_assets.addAnimation("player_run_animation", m_scene_assets.getTexture("player_run_texture"), 10, 5, 120, sf::Vector2f(40, 40));
     m_scene_assets.addAnimation("player_jump_animation", m_scene_assets.getTexture("player_jump_texture"), 3, 5, 120, sf::Vector2f(40, 40));
     m_scene_assets.addAnimation("player_attack1_animation", m_scene_assets.getTexture("player_attack1_texture"), 4, 4, 120, sf::Vector2f(70, 50));
+
+    m_scene_assets.addTexture("white_floor", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_top_left", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 128, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_top_right", "assets/textures/scifi_platform_tiles.png", sf::IntRect(192, 128, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_bottom_left", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 160, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_bottom_right", "assets/textures/scifi_platform_tiles.png", sf::IntRect(192, 160, 32, 32), true, false);
+    m_scene_assets.addTexture("xbox", "assets/textures/scifi_platform_tiles.png", sf::IntRect(96, 160, 32, 32), true, false);
 }
 
 void ScenePlatformer::update()
@@ -149,7 +157,7 @@ void ScenePlatformer::sCollisions()
     m_player->getComponent<CState>().m_state = "air";
 
     int count = 0;
-    for (auto platform : m_entity_manager.getEntities("platform"))
+    for (auto platform : m_entity_manager.getEntities("tile"))
     {
         auto platformTransform = platform->getComponent<CTransform>();
 
@@ -340,13 +348,43 @@ void ScenePlatformer::sRender()
 
 }
 
-void ScenePlatformer::createPlatform(const std::string& name, const sf::Texture& t, const Vector& position)
+bool ScenePlatformer::loadLevel(const std::string& fileName)
 {
-    auto platform = m_entity_manager.addEntity(name);
-    platform->addComponent<CSprite>(t);
-    sf::IntRect spriteRect = platform->getComponent<CSprite>().m_sprite.getTextureRect();
-    platform->addComponent<CTransform>(Vector(position.x-spriteRect.width/2.f, position.y - spriteRect.height/2.f));
-    platform->addComponent<CBoundingBox>(spriteRect);
+    std::ifstream file(fileName);
+    std::string tileName;
+    float positionX;
+    float positionY;
+    std::string collision;
+
+    if (!file)
+    {
+        std::cout << "Counld not load file " << fileName << "\n";
+        return false;
+    }
+
+    while (file.good())
+    {
+        file >> tileName;
+        file >> positionX;
+        file >> positionY;
+        file >> collision;
+        createTile(tileName, Vector(positionX, positionY), (collision == "C" ? true : false));
+    }
+
+    return true;
+}
+
+void ScenePlatformer::createTile(const std::string& textureName, const Vector& position, bool collision)
+{
+    auto tile = m_entity_manager.addEntity("tile");
+    tile->addComponent<CSprite>(m_scene_assets.getTexture(textureName));
+    tile->addComponent<CTransform>(position);
+    tile->addComponent<CAux>(textureName);
+    if (collision)
+    {
+        sf::IntRect spriteRect = tile->getComponent<CSprite>().m_sprite.getTextureRect();
+        tile->addComponent<CBoundingBox>(spriteRect);
+    }
 }
 
 void ScenePlatformer::onEnd()
