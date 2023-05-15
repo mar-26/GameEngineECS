@@ -31,14 +31,22 @@ void LevelMaker::init()
     loadAssets();
     m_background.setTexture(m_scene_assets.getTexture("platformer_background"));
     m_background.setTextureRect(sf::IntRect(0, 0, m_game->width(), m_game->height()));
+
+    createButton("save", Vector(m_game->width()/2.f, (m_game->height()/2.f)), "save_button_texture", 200, 100);
+    createButton("quit", Vector(m_game->width()/2.f, (m_game->height()/2.f)+100), "quit_button_texture", 200, 100);
 }
 
 void LevelMaker::loadAssets()
 {
     m_scene_assets.addTexture("platformer_background", "assets/textures/platformer_background.png", true, true);
-    m_scene_assets.addTexture("white_floor_tile", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 32, 32), true, false);
-    m_scene_assets.addTexture("caution_topleft_tile", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 128, 32, 32), true, false);
-    m_scene_assets.addTexture("xbox_tile", "assets/textures/scifi_platform_tiles.png", sf::IntRect(96, 160, 32, 32), true, false);
+    m_scene_assets.addTexture("white_floor", "assets/textures/scifi_platform_tiles.png", sf::IntRect(0, 192, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_top_left", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 128, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_top_right", "assets/textures/scifi_platform_tiles.png", sf::IntRect(192, 128, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_bottom_left", "assets/textures/scifi_platform_tiles.png", sf::IntRect(160, 160, 32, 32), true, false);
+    m_scene_assets.addTexture("caution_bottom_right", "assets/textures/scifi_platform_tiles.png", sf::IntRect(192, 160, 32, 32), true, false);
+    m_scene_assets.addTexture("xbox", "assets/textures/scifi_platform_tiles.png", sf::IntRect(96, 160, 32, 32), true, false);
+    m_scene_assets.addTexture("save_button_texture", "assets/textures/buttons/save_button.png", true, false);
+    m_scene_assets.addTexture("quit_button_texture", "assets/textures/buttons/quit_button.png", true, false);
 }
 
 void LevelMaker::update()
@@ -54,6 +62,7 @@ void LevelMaker::update()
 #ifdef DEBUG
     ImGui::SFML::Update(m_game->window(), m_delta_clock.restart());
     ImGui::Begin("Debug");
+    ImGui::Checkbox("Debug Render", &m_debug_render);
     ImGui::Checkbox("Collision", &m_collision);
     ImGui::Combo("tiles", &m_current_tile, tileTypes, IM_ARRAYSIZE(tileTypes));
     ImGui::End();
@@ -63,13 +72,9 @@ void LevelMaker::update()
 
 void LevelMaker::sDoAction(const Action &action)
 {
-//    if (ImGui::IsMouseHoveringAnyWindow())
-//    {
-//        printf("here\n");
-//    }
     if (action.type() == "START")
     {
-        if (action.name() == "QUIT") { onEnd(); }
+        if (action.name() == "QUIT") { m_paused = !m_paused; }
         if (action.name() == "MOUSE_WHEEL")
         {
             // limit zoom out
@@ -87,37 +92,52 @@ void LevelMaker::sDoAction(const Action &action)
         }
         if (action.name() == "MOUSE_LEFT")
         {
+            if (!m_paused)
+            {
+                // for keeping screen coordinates and world coordinates the same
+                sf::Vector2i mousePos(action.pos().x, action.pos().y);
+                sf::Vector2f convertedMousePos = m_game->window().mapPixelToCoords(mousePos, m_view);
+
+                Vector tileCoords = tileCenter(convertedMousePos);
+                bool clearSpot = true;
+                for (auto tile : m_entity_manager.getEntities("tile"))
+                {
+                    if (mouseRectHit(tileCoords, tile) || tile->getComponent<CTransform>().m_position == tileCoords)
+                    {
+                        printf("there's alread a tile here\n");
+                        clearSpot = false;
+                    }
+                }
+                if (clearSpot)
+                {
+                    std::cout << tileTypes[m_current_tile] << " tile created\n";
+                    createTile(tileTypes[m_current_tile], tileCoords, m_collision);
+                }
+            }
+            else
+            {
+                for (auto button : m_entity_manager.getEntities("button"))
+                {
+                    if (button->getComponent<CAux>().m_aux == "save" && mouseRectHit(action.pos(), button))
+                    {
+                        saveLevel();
+                    }
+                    if (button->getComponent<CAux>().m_aux == "quit" && mouseRectHit(action.pos(), button))
+                    {
+                        onEnd();
+                    }
+                }
+            }
+        }
+        if (action.name() == "MOUSE_MIDDLE")
+        {
             // for keeping screen coordinates and world coordinates the same
             sf::Vector2i mousePos(action.pos().x, action.pos().y);
             sf::Vector2f convertedMousePos = m_game->window().mapPixelToCoords(mousePos, m_view);
-
-            Vector tileCoords = tileCenter(convertedMousePos);
-
-
-            const char* tType = tileTypes[m_current_tile];
-            sf::Sprite sprite;
-            if (tType == "white_floor")
-            {
-                sprite.setTexture(m_scene_assets.getTexture("white_floor_tile"));
-            }
-            else if (tType == "caution_topleft")
-            {
-                sprite.setTexture(m_scene_assets.getTexture("caution_topleft_tile"));
-            }
-            else if (tType == "xbox")
-            {
-                sprite.setTexture(m_scene_assets.getTexture("xbox_tile"));
-            }
-
-            sprite.setOrigin(m_tile_size/2, m_tile_size/2);
-            sprite.setPosition(tileCoords.x, tileCoords.y);
-            tiles.push_back(sprite);
-
-//
-//            m_mousePos = Vector(convertedMousePos.x, convertedMousePos.y);
-//            mouseLeftPressed = true;
+            m_mousePos = Vector(convertedMousePos.x, convertedMousePos.y);
+            mouseMiddlePressed = true;
         }
-        if (action.name()  == "MOUSE_MOVE")
+        if (action.name() == "MOUSE_MOVE")
         {
             sf::Vector2i mousePos(action.pos().x, action.pos().y);
             sf::Vector2f convertedMousePos = m_game->window().mapPixelToCoords(mousePos, m_view);
@@ -126,28 +146,28 @@ void LevelMaker::sDoAction(const Action &action)
     }
     else if (action.type() == "END")
     {
-        if (action.name() == "MOUSE_LEFT")
+        if (action.name() == "MOUSE_MIDDLE")
         {
-//            mouseLeftPressed = false;
-//            m_mousePos = Vector();
-//            m_mouseMovePos = Vector();
-//            
+            mouseMiddlePressed = false;
+            m_mousePos = Vector();
+            m_mouseMovePos = Vector();
+            
         }
     }
 }
 
 void LevelMaker::sMovement()
 {
-//    if (mouseLeftPressed)
-//    {
-//        if (m_mouseMovePos == Vector())
-//        {
-//            m_mouseMovePos = m_mousePos;
-//        }
-//        Vector newPos = (m_mouseMovePos - m_mousePos).normalize();
-//        m_view.move(-newPos.x, -newPos.y);
-//
-//    }
+    if (mouseMiddlePressed)
+    {
+        if (m_mouseMovePos == Vector())
+        {
+            m_mouseMovePos = m_mousePos;
+        }
+        Vector newPos = (m_mouseMovePos - m_mousePos).normalize();
+        m_view.move(-newPos.x, 0);
+
+    }
 }
 
 void LevelMaker::sCollisions()
@@ -166,15 +186,10 @@ void LevelMaker::sRender()
         m_game->window().clear(sf::Color::White);
         m_game->window().draw(m_background);
 
-        if (mouseLeftPressed)
+        if (mouseMiddlePressed)
         {
             sf::Vertex* line = debugLine(m_mousePos, m_mouseMovePos, sf::Color::Red);
             m_game->window().draw(line, 2, sf::Lines);
-        }
-
-        for (int i = 0; i < tiles.size(); i++)
-        {
-            m_game->window().draw(tiles[i]);
         }
 
         for (int i = 0; i < m_game->height()/m_tile_size; i++)
@@ -187,9 +202,59 @@ void LevelMaker::sRender()
                 m_game->window().draw(verticalLine, 2, sf::Lines);
             }
         }
+
+        for (auto e : m_entity_manager.getEntities("tile"))
+        {
+            auto transform = e->getComponent<CTransform>();
+
+            if (e->hasComponent<CSprite>())
+            {
+                auto& sprite = e->getComponent<CSprite>().m_sprite;
+                sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+                m_game->window().draw(sprite);
+            }
+
+            if (m_debug_render && e->hasComponent<CBoundingBox>())
+            {
+                auto box = e->getComponent<CBoundingBox>();
+                sf::Vertex* outline = debugRectangle(transform.m_position, box.m_half_size, sf::Color::Red);
+                sf::Vertex* centerLineX = debugLine(Vector(transform.m_position.x-box.m_half_size.x, transform.m_position.y), Vector(transform.m_position.x+box.m_half_size.x, transform.m_position.y), sf::Color::Green);
+                sf::Vertex* centerLineY = debugLine(Vector(transform.m_position.x, transform.m_position.y-box.m_half_size.y), Vector(transform.m_position.x, transform.m_position.y+box.m_half_size.y), sf::Color::Green);
+                m_game->window().draw(centerLineX, 2, sf::Lines);
+                m_game->window().draw(centerLineY, 2, sf::Lines);
+                m_game->window().draw(outline, 5, sf::LineStrip);
+            }
+
+        }
     }
     else
     {
+        m_game->window().clear(sf::Color::White);
+        m_game->window().draw(m_background);
+
+        for (auto button : m_entity_manager.getEntities("button"))
+        {
+            auto transform = button->getComponent<CTransform>();
+
+            if (button->hasComponent<CSprite>())
+            {
+                auto& sprite = button->getComponent<CSprite>().m_sprite;
+                sprite.setPosition(sf::Vector2f(transform.m_position.x, transform.m_position.y));
+                m_game->window().draw(sprite);
+            }
+
+            if (m_debug_render && button->hasComponent<CBoundingBox>())
+            {
+                auto box = button->getComponent<CBoundingBox>();
+                sf::Vertex* outline = debugRectangle(transform.m_position, box.m_half_size, sf::Color::Red);
+                sf::Vertex* centerLineX = debugLine(Vector(transform.m_position.x-box.m_half_size.x, transform.m_position.y), Vector(transform.m_position.x+box.m_half_size.x, transform.m_position.y), sf::Color::Green);
+                sf::Vertex* centerLineY = debugLine(Vector(transform.m_position.x, transform.m_position.y-box.m_half_size.y), Vector(transform.m_position.x, transform.m_position.y+box.m_half_size.y), sf::Color::Green);
+                m_game->window().draw(centerLineX, 2, sf::Lines);
+                m_game->window().draw(centerLineY, 2, sf::Lines);
+                m_game->window().draw(outline, 5, sf::LineStrip);
+            }
+
+        }
     }
 
 #ifdef DEBUG
@@ -220,6 +285,47 @@ Vector LevelMaker::tileCenter(const sf::Vector2f& mouseCoords) const
     Vector tile = Vector((int)(mouseCoords.x/m_tile_size), (int)(mouseCoords.y/m_tile_size));
     int halfTile = m_tile_size/2;
     return Vector(tile.x*m_tile_size + halfTile, tile.y*m_tile_size + halfTile);
+}
+
+void LevelMaker::createTile(const std::string& textureName, const Vector& position, bool collision)
+{
+    auto tile = m_entity_manager.addEntity("tile");
+    tile->addComponent<CSprite>(m_scene_assets.getTexture(textureName));
+    tile->addComponent<CTransform>(position);
+    tile->addComponent<CAux>(textureName);
+    if (collision)
+    {
+        sf::IntRect spriteRect = tile->getComponent<CSprite>().m_sprite.getTextureRect();
+        tile->addComponent<CBoundingBox>(spriteRect);
+    }
+}
+
+void LevelMaker::createButton(const std::string& name, const Vector& position, const std::string& textureName, float width, float height)
+{
+    auto button = m_entity_manager.addEntity("button");
+    button->addComponent<CTransform>(position);
+    button->addComponent<CSprite>(m_scene_assets.getTexture(textureName));
+    sf::IntRect spriteRect = button->getComponent<CSprite>().m_sprite.getTextureRect();
+    button->addComponent<CBoundingBox>(spriteRect);
+    button->addComponent<CAux>(name);
+}
+
+bool LevelMaker::saveLevel()
+{
+    for (auto tile : m_entity_manager.getEntities("tile"))
+    {
+        Vector tileTransform = tile->getComponent<CTransform>().m_position;
+        std::cout << tile->getComponent<CAux>().m_aux << " " << tileTransform.x << " " << tileTransform.y << " ";
+        if (tile->hasComponent<CBoundingBox>())
+        {
+            std::cout << "C";
+        }
+        else
+        {
+            std::cout << "N";
+        }
+        std::cout << "\n";
+    }
 }
 
 LevelMaker::~LevelMaker()

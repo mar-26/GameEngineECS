@@ -32,12 +32,14 @@ void SceneMenu::init()
     Vector starshipButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)-100);
     Vector platformerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f));
     Vector isometricButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+100);
-    Vector gridButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+200);
+    Vector levelMakerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+200);
+    Vector quitButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+300);
 
     createButton("play_starship_button", starshipButtonPosition, "play_starship_button_texture", buttonWidth, buttonHeight);
     createButton("play_platformer_button", platformerButtonPosition, "play_platformer_button_texture", buttonWidth, buttonHeight);
     createButton("play_isometric_button", isometricButtonPosition, "play_isometric_button_texture", buttonWidth, buttonHeight);
-    createButton("level_maker_button", gridButtonPosition, "level_maker_button_texture", buttonWidth, buttonHeight);
+    createButton("level_maker_button", levelMakerButtonPosition, "level_maker_button_texture", buttonWidth, buttonHeight);
+    createButton("quit_button", quitButtonPosition, "quit_button_texture", buttonWidth, buttonHeight);
 
     m_menu_music = m_scene_assets.getMusic("menu_music");
     m_menu_music->play();
@@ -50,6 +52,7 @@ void SceneMenu::loadAssets()
     m_scene_assets.addTexture("play_platformer_button_texture", "assets/textures/buttons/play_platformer_button.png", true, false);
     m_scene_assets.addTexture("play_isometric_button_texture", "assets/textures/buttons/play_isometric_button.png", true, false);
     m_scene_assets.addTexture("level_maker_button_texture", "assets/textures/buttons/level_maker_button.png", true, false);
+    m_scene_assets.addTexture("quit_button_texture", "assets/textures/buttons/quit_button.png", true, false);
     m_scene_assets.addMusic("menu_music", "assets/sounds/menu_music.ogg");
 }
 
@@ -123,6 +126,11 @@ void SceneMenu::sDoAction(const Action &action)
                 {
                     m_menu_music->stop();
                     m_game->changeScene("LEVELMAKER", std::make_shared<LevelMaker>(m_game));
+                }
+                if (button->tag() == "quit_button" && mouseRectHit(action.pos(), button))
+                {
+                    m_menu_music->stop();
+                    onEnd();
                 }
             }
         }

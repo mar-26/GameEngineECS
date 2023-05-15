@@ -117,4 +117,13 @@ class CState : public Component
             : m_state(s) {}
 };
 
+class CAux : public Component
+{
+    public:
+        std::string m_aux = "";
+        CAux() {}
+        CAux(const std::string& s)
+            : m_aux(s) {}
+};
+
 #endif

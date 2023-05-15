@@ -15,7 +15,8 @@ typedef std::tuple<
     CSoundEffect,
     CInput,
     CState,
-    CGravity
+    CGravity,
+    CAux
 > ComponentTuple;
 
 class EntityManager;
