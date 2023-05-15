@@ -3,7 +3,7 @@
 #include "../include/SceneStarship.hpp"
 #include "../include/ScenePlatformer.hpp"
 #include "../include/SceneIsometric.hpp"
-#include "../include/SceneStaticAnalysis.hpp"
+#include "../include/LevelMaker.hpp"
 #include "../include/Physics.hpp"
 #include "../include/DebugShapes.hpp"
 
@@ -32,12 +32,12 @@ void SceneMenu::init()
     Vector starshipButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)-100);
     Vector platformerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f));
     Vector isometricButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+100);
-    Vector staticAnalysisButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+200);
+    Vector gridButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+200);
 
     createButton("play_starship_button", starshipButtonPosition, "play_starship_button_texture", buttonWidth, buttonHeight);
     createButton("play_platformer_button", platformerButtonPosition, "play_platformer_button_texture", buttonWidth, buttonHeight);
     createButton("play_isometric_button", isometricButtonPosition, "play_isometric_button_texture", buttonWidth, buttonHeight);
-    createButton("static_analysis_button", staticAnalysisButtonPosition, "static_analysis_button_texture", buttonWidth, buttonHeight);
+    createButton("level_maker_button", gridButtonPosition, "level_maker_button_texture", buttonWidth, buttonHeight);
 
     m_menu_music = m_scene_assets.getMusic("menu_music");
     m_menu_music->play();
@@ -49,7 +49,7 @@ void SceneMenu::loadAssets()
     m_scene_assets.addTexture("play_starship_button_texture", "assets/textures/buttons/play_starship_button.png", true, false);
     m_scene_assets.addTexture("play_platformer_button_texture", "assets/textures/buttons/play_platformer_button.png", true, false);
     m_scene_assets.addTexture("play_isometric_button_texture", "assets/textures/buttons/play_isometric_button.png", true, false);
-    m_scene_assets.addTexture("static_analysis_button_texture", "assets/textures/buttons/static_analysis_button.png", true, false);
+    m_scene_assets.addTexture("level_maker_button_texture", "assets/textures/buttons/level_maker_button.png", true, false);
     m_scene_assets.addMusic("menu_music", "assets/sounds/menu_music.ogg");
 }
 
@@ -119,10 +119,10 @@ void SceneMenu::sDoAction(const Action &action)
                     m_menu_music->stop();
                     m_game->changeScene("ISOMETRIC", std::make_shared<SceneIsometric>(m_game));
                 }
-                if (button->tag() == "static_analysis_button" && mouseRectHit(action.pos(), button))
+                if (button->tag() == "level_maker_button" && mouseRectHit(action.pos(), button))
                 {
                     m_menu_music->stop();
-                    m_game->changeScene("STATICANALYSIS", std::make_shared<SceneStaticAnalysis>(m_game));
+                    m_game->changeScene("LEVELMAKER", std::make_shared<LevelMaker>(m_game));
                 }
             }
         }
