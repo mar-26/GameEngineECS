@@ -2,6 +2,7 @@
 
 #include "../include/Action.hpp"
 #include "../include/SceneMenu.hpp"
+#include "../include/imgui/imgui.h"
 #include "../include/imgui-sfml/imgui-SFML.h"
 
 #include <SFML/Window/Event.hpp>
@@ -87,6 +88,7 @@ void GameEngine::sUserInput()
 
         if (event.type == sf::Event::KeyPressed || event.type == sf::Event::KeyReleased)
         {
+
             // if there is no aciton for the key then ignore it
             if (currentScene()->getActionMap().find(event.key.code) == currentScene()->getActionMap().end())
             {
@@ -103,6 +105,10 @@ void GameEngine::sUserInput()
 
         if (event.type == sf::Event::MouseButtonPressed)
         {
+            if (ImGui::GetIO().WantCaptureMouse)
+            {
+                continue;
+            }
             switch (event.mouseButton.button)
             {
                 case sf::Mouse::Left:
