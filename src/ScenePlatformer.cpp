@@ -182,36 +182,37 @@ void ScenePlatformer::sCollisions()
 
     m_player->getComponent<CState>().m_state = "air";
 
-    int count = 0;
     for (auto platform : m_entity_manager.getEntities("tile"))
     {
-        auto platformTransform = platform->getComponent<CTransform>();
-
-        Vector overlap = rectRectCollision(m_player, platform);
-        Vector prevOverlap = prevRectRectCollision(m_player, platform);
-
-        if (overlap.x < 0 || overlap.y < 0) { continue; }
-
-        Vector diff = playerTransform.m_position - platformTransform.m_position;
-        Vector shift = {};
-
-        if (prevOverlap.x > 0)
+        if (platform->hasComponent<CBoundingBox>())
         {
-            shift.y = diff.y > 0 ? overlap.y : -overlap.y;
-            playerTransform.m_velocity.y = 0;
-            if (diff.y < 0)
+            auto platformTransform = platform->getComponent<CTransform>();
+
+            Vector overlap = rectRectCollision(m_player, platform);
+            Vector prevOverlap = prevRectRectCollision(m_player, platform);
+
+            if (overlap.x < 0 || overlap.y < 0) { continue; }
+
+            Vector diff = playerTransform.m_position - platformTransform.m_position;
+            Vector shift = {};
+
+            if (prevOverlap.x > 0)
             {
-                m_player->getComponent<CState>().m_state = "ground";
-                playerTransform.m_position += platformTransform.m_velocity;
+                shift.y = diff.y > 0 ? overlap.y : -overlap.y;
+                playerTransform.m_velocity.y = 0;
+                if (diff.y < 0)
+                {
+                    m_player->getComponent<CState>().m_state = "ground";
+                    playerTransform.m_position += platformTransform.m_velocity;
+                }
             }
+            else if (prevOverlap.y > 0)
+            {
+                shift.x += diff.x > 0 ? overlap.x : -overlap.x;
+                playerTransform.m_velocity.x = 0;
+            }
+            playerTransform.m_position += shift;
         }
-        else if (prevOverlap.y > 0)
-        {
-            shift.x += diff.x > 0 ? overlap.x : -overlap.x;
-            playerTransform.m_velocity.x = 0;
-        }
-        playerTransform.m_position += shift;
-        count++;
     }
 
     if (playerTransform.m_position.y > m_game->height()-m_player->getComponent<CBoundingBox>().m_half_size.y)

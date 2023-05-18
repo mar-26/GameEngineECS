@@ -138,6 +138,21 @@ void LevelMaker::sDoAction(const Action &action)
                 }
             }
         }
+        if (action.name() == "MOUSE_RIGHT")
+        {
+                sf::Vector2i mousePos(action.pos().x, action.pos().y);
+                sf::Vector2f convertedMousePos = m_game->window().mapPixelToCoords(mousePos, m_view);
+
+                Vector tileCoords = tileCenter(convertedMousePos);
+                bool clearSpot = true;
+                for (auto tile : m_entity_manager.getEntities("tile"))
+                {
+                    if (mouseRectHit(tileCoords, tile) || tile->getComponent<CTransform>().m_position == tileCoords)
+                    {
+                        tile->destroy();
+                    }
+                }
+        }
         if (action.name() == "MOUSE_MIDDLE")
         {
             // for keeping screen coordinates and world coordinates the same
