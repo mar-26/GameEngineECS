@@ -2,7 +2,6 @@
 #include "../include/GameEngine.hpp"
 #include "../include/SceneStarship.hpp"
 #include "../include/ScenePlatformer.hpp"
-#include "../include/SceneIsometric.hpp"
 #include "../include/LevelMaker.hpp"
 #include "../include/Physics.hpp"
 #include "../include/DebugShapes.hpp"
@@ -31,13 +30,11 @@ void SceneMenu::init()
     float buttonHeight = 50;
     Vector starshipButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)-100);
     Vector platformerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f));
-    Vector isometricButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+100);
-    Vector levelMakerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+200);
-    Vector quitButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+300);
+    Vector levelMakerButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+100);
+    Vector quitButtonPosition = Vector((m_game->width()/2.f), (m_game->height()/2.f)+200);
 
     createButton("play_starship_button", starshipButtonPosition, "play_starship_button_texture", buttonWidth, buttonHeight);
     createButton("play_platformer_button", platformerButtonPosition, "play_platformer_button_texture", buttonWidth, buttonHeight);
-    createButton("play_isometric_button", isometricButtonPosition, "play_isometric_button_texture", buttonWidth, buttonHeight);
     createButton("level_maker_button", levelMakerButtonPosition, "level_maker_button_texture", buttonWidth, buttonHeight);
     createButton("quit_button", quitButtonPosition, "quit_button_texture", buttonWidth, buttonHeight);
 
@@ -50,7 +47,6 @@ void SceneMenu::loadAssets()
     m_scene_assets.addTexture("menu_background", "assets/textures/rock.png", true, true);
     m_scene_assets.addTexture("play_starship_button_texture", "assets/textures/buttons/play_starship_button.png", true, false);
     m_scene_assets.addTexture("play_platformer_button_texture", "assets/textures/buttons/play_platformer_button.png", true, false);
-    m_scene_assets.addTexture("play_isometric_button_texture", "assets/textures/buttons/play_isometric_button.png", true, false);
     m_scene_assets.addTexture("level_maker_button_texture", "assets/textures/buttons/level_maker_button.png", true, false);
     m_scene_assets.addTexture("quit_button_texture", "assets/textures/buttons/quit_button.png", true, false);
     m_scene_assets.addMusic("menu_music", "assets/sounds/menu_music.ogg");
@@ -116,11 +112,6 @@ void SceneMenu::sDoAction(const Action &action)
                 {
                     m_menu_music->stop();
                     m_game->changeScene("PLATFORMER", std::make_shared<ScenePlatformer>(m_game));
-                }
-                if (button->tag() == "play_isometric_button" && mouseRectHit(action.pos(), button))
-                {
-                    m_menu_music->stop();
-                    m_game->changeScene("ISOMETRIC", std::make_shared<SceneIsometric>(m_game));
                 }
                 if (button->tag() == "level_maker_button" && mouseRectHit(action.pos(), button))
                 {

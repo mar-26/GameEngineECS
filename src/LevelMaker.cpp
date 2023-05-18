@@ -22,7 +22,7 @@
 LevelMaker::LevelMaker(GameEngine* gameEngine)
     : Scene(gameEngine)
 {
-    std::cout << "Loading Isometric\n";
+    std::cout << "Loading Level Maker\n";
     init();
     m_debug_value = 1;
     m_view.setSize(m_game->width(), m_game->height());
@@ -112,13 +112,11 @@ void LevelMaker::sDoAction(const Action &action)
                 {
                     if (mouseRectHit(tileCoords, tile) || tile->getComponent<CTransform>().m_position == tileCoords)
                     {
-                        printf("there's alread a tile here\n");
                         clearSpot = false;
                     }
                 }
                 if (clearSpot)
                 {
-                    std::cout << tileTypes[m_current_tile] << " tile created\n";
                     createTile(tileTypes[m_current_tile], tileCoords, m_collision);
                 }
             }

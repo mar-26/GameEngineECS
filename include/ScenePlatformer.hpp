@@ -32,6 +32,7 @@ class ScenePlatformer : public Scene
         std::string             m_title;
         sf::Text                m_menu_title;
         sf::Clock               m_delta_clock;
+        std::string             m_level_file;
         bool                    m_debug = false;
         float                   m_debug_value = 5;
         float                   m_dt = 0.01666667;

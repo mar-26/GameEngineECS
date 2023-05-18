@@ -5,6 +5,7 @@
 #include "../include/DebugShapes.hpp"
 
 #include "../include/imgui/imgui.h"
+#include "../include/imgui/imfilebrowser.h"
 #include "../include/imgui-sfml/imgui-SFML.h"
 
 #include <SFML/Graphics/Rect.hpp>
@@ -13,6 +14,7 @@
 
 #include <memory>
 #include <fstream>
+#include <dirent.h>
 
 ScenePlatformer::ScenePlatformer(GameEngine* gameEngine)
     : Scene(gameEngine)
@@ -35,18 +37,13 @@ void ScenePlatformer::init()
     m_background.setTexture(m_scene_assets.getTexture("background"));
     m_background.setTextureRect(sf::IntRect(0, 0, m_game->width(), m_game->height()));
 
-    if (!loadLevel("../levels/level_20230515141728_123.txt"))
-    {
-        std::cout << "File failed to loaded\n";
-        m_game->quit();
-    }
-
     m_player = m_entity_manager.addEntity("player");
     m_player->addComponent<CTransform>(Vector(m_game->width()/2.f, m_game->height()/2.f));
     m_player->addComponent<CBoundingBox>(Vector(25, 60));
     m_player->addComponent<CState>();
     m_player->addComponent<CGravity>(Vector(0, 2000));
 
+    m_paused = true;
 }
 
 void ScenePlatformer::loadAssets()
@@ -81,12 +78,41 @@ void ScenePlatformer::update()
         sAnimation();
     }
 
+
 #ifdef DEBUG
+
+    ImGui::FileBrowser fileDialog;
+    
+    // set file browser properties
+    fileDialog.SetTitle("Level Select");
+    fileDialog.SetTypeFilters({ ".txt" });
+    fileDialog.SetPwd("../levels/");
+
     ImGui::SFML::Update(m_game->window(), m_delta_clock.restart());
     ImGui::Begin("Debug");
     ImGui::Checkbox("Debug", &m_debug);
-    ImGui::SliderFloat("player jump", &m_player_stats.jumpForce, 1000, 2000);
+    if(ImGui::Button("open file dialog"))
+        fileDialog.Open();
     ImGui::End();
+
+    fileDialog.Display();
+        
+    if(fileDialog.HasSelected())
+    {
+//        std::cout << "Selected filename" << fileDialog.GetSelected().string() << std::endl;
+        m_level_file = fileDialog.GetSelected().string();
+
+        // clear old level
+        for (auto e : m_entity_manager.getEntities("tile"))
+        {
+            e->destroy();
+        }
+        // load new level
+        loadLevel(m_level_file);
+
+        fileDialog.ClearSelected();
+        m_paused = false;
+    }
 #endif
 
 }
@@ -260,11 +286,10 @@ void ScenePlatformer::sAnimation()
 
 void ScenePlatformer::sRender()
 {
+    m_game->window().clear();
+    m_game->window().draw(m_background);
     if (!m_paused)
     {
-        m_game->window().clear();
-
-        m_game->window().draw(m_background);
 
         if (m_debug)
         {
@@ -341,6 +366,7 @@ void ScenePlatformer::sRender()
     else
     {
     }
+
 
 #ifdef DEBUG
     ImGui::SFML::Render(m_game->window());
