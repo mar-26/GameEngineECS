@@ -83,6 +83,8 @@ void LevelMaker::sDoAction(const Action &action)
     if (action.type() == "START")
     {
         if (action.name() == "QUIT") { m_paused = !m_paused; }
+
+        // zoom in and out
         if (action.name() == "MOUSE_WHEEL")
         {
             // limit zoom out
@@ -98,6 +100,8 @@ void LevelMaker::sDoAction(const Action &action)
                 m_view.reset(sf::FloatRect(0, 0, m_game->width(), m_game->height()));
             }
         }
+
+        // place tiles
         if (action.name() == "MOUSE_LEFT")
         {
             if (!m_paused)
@@ -138,6 +142,8 @@ void LevelMaker::sDoAction(const Action &action)
                 }
             }
         }
+
+        // eraser
         if (action.name() == "MOUSE_RIGHT")
         {
                 sf::Vector2i mousePos(action.pos().x, action.pos().y);
@@ -153,6 +159,8 @@ void LevelMaker::sDoAction(const Action &action)
                     }
                 }
         }
+
+        // move around
         if (action.name() == "MOUSE_MIDDLE")
         {
             // for keeping screen coordinates and world coordinates the same
